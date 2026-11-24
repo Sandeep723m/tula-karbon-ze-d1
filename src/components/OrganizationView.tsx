@@ -1,5 +1,5 @@
 import React from 'react';
-import { Building2, MapPin, Zap, CheckCircle2, ChevronRight, Activity, ArrowUpRight } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { YearEmissionsData, EmitterItem } from '../types';
 
 interface OrganizationViewProps {
@@ -7,28 +7,34 @@ interface OrganizationViewProps {
   onSelectFacility?: (facility: EmitterItem) => void;
 }
 
+const getScopeTagStyle = (scope: string) => {
+  if (scope === 'Scope 1') return 'text-[#5625B8] bg-[#EEEAF5] border-[#5625B8]/25';
+  if (scope === 'Scope 2') return 'text-[#C2410C] bg-[#FFF3EC] border-[#F46A1F]/25';
+  return 'text-[#1D4ED8] bg-[#EFF6FF] border-[#2563EB]/25';
+};
+
 export const OrganizationView: React.FC<OrganizationViewProps> = ({
   data,
   onSelectFacility
 }) => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-normal text-[#0B1926] tracking-tight">
-            Facilities & Enterprise Operational Boundary
+          <h2 className="text-[20px] sm:text-[24px] font-semibold text-[#15131A] tracking-tight leading-tight">
+            Facilities &amp; Enterprise Operational Boundary
           </h2>
-          <p className="text-xs text-slate-500 font-light mt-0.5">
+          <p className="text-[13px] sm:text-[14px] text-[#667085] font-normal mt-1">
             Real-time IoT sub-metering across 54 global production plants, assembly lines, and cloud data centers.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
-          <span className="px-3 py-1.5 glass-panel text-slate-600">
-            54 Facilities Active
+        <div className="flex items-center gap-2 text-[12px] shrink-0">
+          <span className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#D8D2DF] text-[#15131A] font-medium">
+            <span className="font-data font-semibold">54</span> Facilities Active
           </span>
-          <span className="px-3 py-1.5 glass-panel text-emerald-700">
-            98.4% Telemetry Uptime
+          <span className="px-3 py-1.5 rounded-lg bg-[#ECFDF3] border border-[#BBF7D0] text-[#15803D] font-medium">
+            <span className="font-data font-semibold">98.4%</span> Telemetry Uptime
           </span>
         </div>
       </div>
@@ -39,42 +45,46 @@ export const OrganizationView: React.FC<OrganizationViewProps> = ({
           <div
             key={fac.id}
             onClick={onSelectFacility ? () => onSelectFacility(fac) : undefined}
-            className={`glass-card-top p-5 group flex flex-col justify-between hover:shadow-[0_16px_40px_rgba(11,25,38,0.06)] hover:border-white transition-all duration-300 ${
+            className={`glass-card-top p-5 group flex flex-col justify-between ${
               onSelectFacility ? 'cursor-pointer' : ''
             }`}
           >
             <div>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#0E6DBB] bg-white/80 backdrop-blur-sm border border-[#0E6DBB]/20 px-2.5 py-0.5 rounded-full shadow-2xs">
+              <div className="flex items-center justify-between gap-2">
+                <span className={`text-[11px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-md border ${getScopeTagStyle(fac.primaryScope)}`}>
                   {fac.primaryScope} Primary
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 bg-white/80 backdrop-blur-sm border border-emerald-200/70 px-2 py-0.5 rounded-full shadow-2xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Sync
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#15803D] bg-[#ECFDF3] border border-[#BBF7D0] px-2 py-0.5 rounded-md">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#15803D]" />
+                  Approved
                 </span>
               </div>
 
-              <h3 className="text-sm sm:text-base font-semibold text-[#0B1926] mt-3 group-hover:text-[#0E6DBB] transition-colors line-clamp-1">
+              <h3 className="text-[16px] font-semibold text-[#15131A] mt-3 group-hover:text-[#5625B8] transition-colors line-clamp-1">
                 {fac.name}
               </h3>
 
-              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mt-1">
-                <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <div className="flex items-center gap-1.5 text-[13px] text-[#667085] mt-1">
+                <MapPin className="w-3.5 h-3.5 text-[#85808D] shrink-0" strokeWidth={1.75} />
                 <span className="truncate">{fac.location}</span>
               </div>
             </div>
 
-            <div className="mt-5 pt-3.5 border-t border-slate-200/60 flex items-center justify-between">
+            <div className="mt-5 pt-3.5 border-t border-[#D8D2DF] flex items-center justify-between">
               <div>
-                <div className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Emissions</div>
-                <div className="text-base font-semibold font-data text-[#0B1926]">
-                  {fac.emissions.toLocaleString()} <span className="text-xs text-slate-500 font-normal">tCO2e</span>
+                <div className="text-[11px] text-[#85808D] uppercase font-medium tracking-wider">Emissions</div>
+                <div className="text-[16px] font-semibold font-data text-[#15131A] mt-0.5">
+                  {fac.emissions.toLocaleString()} <span className="text-[12px] text-[#667085] font-sans font-normal">tCO2e</span>
                 </div>
               </div>
 
               <div className="text-right">
-                <div className="text-[10px] text-slate-400 uppercase font-semibold tracking-wider">Target Variance</div>
-                <div className={`text-xs font-semibold font-data ${fac.trend > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                <div className="text-[11px] text-[#85808D] uppercase font-medium tracking-wider">Target Variance</div>
+                <div className={`text-[12px] font-semibold font-data mt-1 px-2 py-0.5 rounded-md border inline-block ${
+                  fac.trend > 0
+                    ? 'text-[#B91C1C] bg-[#FEF2F2] border-[#FECACA]'
+                    : 'text-[#15803D] bg-[#ECFDF3] border-[#BBF7D0]'
+                }`}>
                   {fac.trend > 0 ? `+${fac.trend}%` : `${fac.trend}%`} YoY
                 </div>
               </div>

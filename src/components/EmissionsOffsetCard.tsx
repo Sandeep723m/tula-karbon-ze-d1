@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Maximize2, ShieldCheck, ExternalLink, Info, Check } from 'lucide-react';
 import { YearEmissionsData } from '../types';
 
 interface EmissionsOffsetCardProps {
@@ -10,20 +9,17 @@ interface EmissionsOffsetCardProps {
 export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({
   data
 }) => {
-  // 4 Project Status categories matching the user's uploaded reference image
-  // 23 + 13 + 3 + 3 = 42 Total Active Offset Projects
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'count' | 'tonnage'>('count');
-  const [isCardHovered, setIsCardHovered] = useState(false);
 
+  // 4 differentiated warm/brand orange-amber & neutral tones harmonized with Tula Carbon
   const projectStatusData = [
     {
       id: 'in-progress',
       name: 'In Progress',
       count: 23,
       tonnage: 21400,
-      color: '#D97706', // Rich deep warm amber (Amber 600)
-      dotClass: 'bg-[#D97706]',
+      color: '#F46A1F', // Brand Deep Orange
       description: 'Active forestry, direct air capture & renewable displacement projects currently retiring credits.'
     },
     {
@@ -31,8 +27,7 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({
       name: 'Completed',
       count: 13,
       tonnage: 11200,
-      color: '#FBBF24', // Medium bright gold amber (Amber 400)
-      dotClass: 'bg-[#FBBF24]',
+      color: '#D97706', // Warm Amber
       description: 'Fully audited & certified vintage credits retired on Verra / Gold Standard registries.'
     },
     {
@@ -40,8 +35,7 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({
       name: 'In Review',
       count: 3,
       tonnage: 3100,
-      color: '#FDE047', // Light luminous radiant canary yellow (Yellow 300)
-      dotClass: 'bg-[#FDE047]',
+      color: '#FBBF24', // Luminous Gold
       description: 'Third-party auditor review (ISO 14064-3 limited assurance in progress).'
     },
     {
@@ -49,35 +43,29 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({
       name: 'On Hold',
       count: 3,
       tonnage: 1800,
-      color: '#94A3B8', // Neutral refined cool slate (Slate 400)
-      dotClass: 'bg-[#94A3B8]',
+      color: '#85808D', // Tertiary Neutral
       description: 'Buffer pool reserve held against potential reversal or leakage risk.'
     }
   ];
 
-  const totalProjects = projectStatusData.reduce((acc, curr) => acc + curr.count, 0); // 42
-  const totalTonnage = data.totalOffset; // 37,500 tCO2e
+  const totalProjects = projectStatusData.reduce((acc, curr) => acc + curr.count, 0);
+  const totalTonnage = data.totalOffset;
 
-  // SVG Arch Gauge Math (Enlarged for prominent visual hierarchy)
-  // Semi-circle spanning from 180° to 0°
+  // Enlarged SVG Arch Gauge Geometry
   const cx = 130;
   const cy = 125;
   const r = 95;
   const strokeWidth = 17;
-  const totalArcLength = Math.PI * r; // ~298.45px
+  const totalArcLength = Math.PI * r;
 
-  // 3 gaps of 3px between 4 segments
   const gapSize = 3;
-  const totalGaps = gapSize * 3; // 9px
+  const totalGaps = gapSize * 3;
   const usableArcLength = totalArcLength - totalGaps;
 
-  // Calculate arc lengths for each segment
   const segmentLengths = projectStatusData.map((item) => {
     return (item.count / totalProjects) * usableArcLength;
   });
 
-  // Calculate dash offset for each segment along the semi-circle
-  // Segment 1 starts at 0 offset (from 180°)
   const offset0 = 0;
   const offset1 = -(segmentLengths[0] + gapSize);
   const offset2 = -(segmentLengths[0] + gapSize + segmentLengths[1] + gapSize);
@@ -89,43 +77,39 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({
     : null;
 
   return (
-    <div
-      onMouseEnter={() => setIsCardHovered(true)}
-      onMouseLeave={() => setIsCardHovered(false)}
-      className="glass-card-top p-5 sm:p-6 lg:p-7 relative overflow-hidden flex flex-col justify-between h-full hover:shadow-[0_16px_40px_rgba(11,25,38,0.06)] hover:border-white transition-all duration-300"
-    >
-      {/* 1. Header: Project Status on left, Expand / Fullscreen icon button on right */}
-      <div className="flex items-center justify-between pb-3 sm:pb-3.5 border-b border-slate-200/60">
+    <div className="glass-card-top p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between h-full">
+      {/* 1. Header */}
+      <div className="flex items-center justify-between pb-4 border-b border-[#D8D2DF]">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-base sm:text-[19px] font-semibold text-[#0B1926] tracking-tight">
+            <h2 className="text-[20px] font-semibold text-[#15131A] tracking-tight leading-snug">
               Project Status
             </h2>
-            <span className="text-[11px] font-medium text-emerald-700 bg-white/80 backdrop-blur-sm border border-emerald-200/70 px-2.5 py-0.5 rounded-full shadow-2xs">
-              KBank Active
+            <span className="text-[11px] font-medium text-[#15803D] bg-[#ECFDF3] border border-[#BBF7D0] px-2 py-0.5 rounded-md">
+              Approved
             </span>
           </div>
-          <p className="text-xs text-slate-500 font-normal mt-0.5">
-            Carbon offset & removal portfolio
+          <p className="text-[13px] text-[#667085] font-normal mt-0.5">
+            Carbon offset &amp; removal portfolio
           </p>
         </div>
       </div>
 
-      {/* 2. Center: Semi-Circle Gauge with Big Hero "42" and "Active Projects" */}
-      <div className="relative w-full flex flex-col items-center justify-center my-auto py-2">
+      {/* 2. Center: Enlarged Semi-Circle Gauge */}
+      <div className="relative w-full flex flex-col items-center justify-center my-auto py-3">
         <div className="relative w-[250px] sm:w-[280px] h-[135px] sm:h-[150px] flex items-end justify-center overflow-hidden">
           <svg
             viewBox="0 0 260 140"
             className="w-full h-full overflow-visible select-none"
             aria-label="Offset Project Status Gauge"
           >
-            {/* Background subtle guide track */}
+            {/* Background guide track */}
             <circle
               cx={cx}
               cy={cy}
               r={r}
               fill="none"
-              stroke="#F1F5F9"
+              stroke="#EEEAF5"
               strokeWidth={strokeWidth}
               strokeDasharray={`${totalArcLength} ${totalArcLength * 2}`}
               strokeDashoffset="0"
@@ -133,7 +117,7 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({
               transform={`rotate(-180 ${cx} ${cy})`}
             />
 
-            {/* 4 Colored Segments along the semi-circle */}
+            {/* 4 Colored Segments */}
             {projectStatusData.map((item, idx) => {
               const isHovered = hoveredCategory === item.id;
               const isOtherHovered = hoveredCategory !== null && !isHovered;
@@ -153,7 +137,7 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({
                   transform={`rotate(-180 ${cx} ${cy})`}
                   className="transition-all duration-300 cursor-pointer"
                   style={{
-                    opacity: isOtherHovered ? 0.35 : 1
+                    opacity: isOtherHovered ? 0.3 : 1
                   }}
                   onMouseEnter={() => setHoveredCategory(item.id)}
                   onMouseLeave={() => setHoveredCategory(null)}
@@ -162,9 +146,9 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({
             })}
           </svg>
 
-          {/* Centered Readout inside the Semi-circle Arch: "42" + "Active Projects" */}
+          {/* Centered Readout */}
           <div className="absolute inset-x-0 bottom-1.5 flex flex-col items-center justify-center text-center pointer-events-none">
-            <span className="text-3xl sm:text-[36px] font-bold text-[#0B1926] tracking-tight font-data leading-none">
+            <span className="text-[32px] sm:text-[36px] font-semibold text-[#15131A] tracking-tight font-data leading-none">
               {activeCategory
                 ? viewMode === 'count'
                   ? activeCategory.count
@@ -173,7 +157,7 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({
                 ? totalProjects
                 : `${(totalTonnage / 1000).toFixed(1)}k`}
             </span>
-            <span className="text-[11px] uppercase font-semibold tracking-wider text-slate-500 mt-1 transition-all">
+            <span className="text-[11px] uppercase font-medium tracking-wider text-[#85808D] mt-1">
               {activeCategory
                 ? activeCategory.name
                 : viewMode === 'count'
@@ -183,22 +167,22 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({
           </div>
         </div>
 
-        {/* Micro Toggle to switch between Project Count and Carbon Tonnage */}
+        {/* Toggle between Project Count and Carbon Tonnage */}
         <button
           onClick={() => setViewMode(viewMode === 'count' ? 'tonnage' : 'count')}
-          className="mt-2.5 text-[11px] text-slate-600 hover:text-[#0B1926] font-medium transition-colors flex items-center gap-1 cursor-pointer bg-white/60 hover:bg-white/80 px-3 py-1 rounded-full border border-white/80 shadow-2xs"
+          className="mt-3 text-[12px] text-[#5625B8] hover:text-[#461D98] font-medium transition-colors flex items-center gap-1.5 cursor-pointer bg-[#EEEAF5] hover:bg-[#E4DEF0] px-3 py-1.5 rounded-lg border border-[#D8D2DF]"
         >
           <span>
             {viewMode === 'count'
-              ? 'Showing 42 Projects · View Tonnage'
-              : 'Showing 37.5k tCO2e · View Projects'}
+              ? `Showing ${totalProjects} Projects · View Tonnage`
+              : `Showing ${(totalTonnage / 1000).toFixed(1)}k tCO2e · View Projects`}
           </span>
         </button>
       </div>
 
-      {/* 3. Bottom 2x2 Legend: Aligned with Colored Dots and Count in Parentheses */}
-      <div className="pt-3.5 border-t border-slate-200/60">
-        <div className="grid grid-cols-2 gap-2.5 text-xs">
+      {/* 3. Bottom 2x2 Legend */}
+      <div className="pt-4 border-t border-[#D8D2DF]">
+        <div className="grid grid-cols-2 gap-3 text-[12px]">
           {projectStatusData.map((item) => {
             const isHovered = hoveredCategory === item.id;
             return (
@@ -206,19 +190,19 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({
                 key={item.id}
                 onMouseEnter={() => setHoveredCategory(item.id)}
                 onMouseLeave={() => setHoveredCategory(null)}
-                className={`p-2.5 rounded-2xl bg-white/60 hover:bg-white/80 backdrop-blur-md border border-white/85 shadow-[0_2px_8px_rgba(15,23,42,0.03)] flex items-center gap-2.5 cursor-pointer transition-all ${
-                  isHovered ? 'scale-102 bg-white/90 border-white' : ''
+                className={`p-2.5 rounded-xl border flex items-center gap-2.5 cursor-pointer transition-colors ${
+                  isHovered
+                    ? 'bg-[#EEEAF5] border-[#5625B8]/40'
+                    : 'bg-[#F7F5F2] hover:bg-[#EEEAF5]/60 border-[#D8D2DF]'
                 }`}
               >
-                {/* Colored Dot */}
                 <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform shadow-xs"
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: item.color }}
                 />
-                {/* Text and Count in Parentheses */}
-                <div className="flex items-baseline gap-1 truncate text-slate-700">
-                  <span className="text-xs font-medium truncate">{item.name}</span>
-                  <span className="font-semibold text-xs text-[#0B1926] font-data">
+                <div className="flex items-baseline gap-1 truncate text-[#15131A]">
+                  <span className="text-[12px] font-medium truncate">{item.name}</span>
+                  <span className="font-semibold text-[12px] text-[#15131A] font-data">
                     ({viewMode === 'count' ? item.count : `${(item.tonnage / 1000).toFixed(1)}k`})
                   </span>
                 </div>

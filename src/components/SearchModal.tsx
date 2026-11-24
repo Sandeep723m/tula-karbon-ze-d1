@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { X, Search, Building2, Flame, FileText, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { X, Search, ArrowRight } from 'lucide-react';
 import { YearEmissionsData } from '../types';
 
 interface SearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   data: YearEmissionsData;
-  onSelectAction: (action: string, param?: any) => void;
+  onSelectAction: (action: string, param?: unknown) => void;
 }
 
 interface SearchableItem {
@@ -14,7 +14,7 @@ interface SearchableItem {
   title: string;
   subtitle: string;
   action: string;
-  payload?: any;
+  payload?: unknown;
 }
 
 export const SearchModal: React.FC<SearchModalProps> = ({
@@ -50,12 +50,6 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     },
     {
       type: 'action',
-      title: 'KBank Verified Carbon Offset Portfolio',
-      subtitle: 'Retire certified carbon removal and avoided emissions credits',
-      action: 'kbank'
-    },
-    {
-      type: 'action',
       title: 'BRSR & GRI 305 Compliance Export',
       subtitle: 'Download statutory investor-grade sustainability report',
       action: 'reports'
@@ -69,26 +63,31 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-[#0B1926]/40 backdrop-blur-md animate-in fade-in">
-      <div className="glass-panel bg-white/95 max-w-xl w-full p-4 shadow-2xl relative border border-white/90">
-        <div className="flex items-center gap-3 px-3 py-2 border-b border-slate-100">
-          <Search className="w-4 h-4 text-slate-400" />
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-[#15131A]/45 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-[#FFFFFF] max-w-xl w-full p-4 rounded-2xl shadow-[0_16px_48px_rgba(21,19,26,0.18)] relative border border-[#D8D2DF]">
+        {/* Search Input Field (#FFFFFF surface, 14px search text) */}
+        <div className="flex items-center gap-3 px-3 py-2.5 border-b border-[#D8D2DF]">
+          <Search className="w-4 h-4 text-[#5625B8]" strokeWidth={1.75} />
           <input
             type="text"
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search facilities, emissions sources, reports, simulators..."
-            className="w-full text-sm text-[#0B1926] bg-transparent outline-none placeholder:text-slate-400 font-light"
+            className="w-full text-[14px] text-[#15131A] bg-[#FFFFFF] outline-none placeholder:text-[#85808D]"
           />
-          <button onClick={onClose} className="p-1 rounded hover:bg-slate-100 text-slate-400">
-            <X className="w-4 h-4" />
+          <button
+            onClick={onClose}
+            aria-label="Close search"
+            className="p-1.5 rounded-lg hover:bg-[#EEEAF5] text-[#85808D] hover:text-[#15131A] transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" strokeWidth={1.75} />
           </button>
         </div>
 
         <div className="mt-2 max-h-72 overflow-y-auto space-y-1">
           {filtered.length === 0 ? (
-            <div className="p-6 text-center text-xs text-slate-400">
+            <div className="p-6 text-center text-[13px] text-[#85808D]">
               No matching facilities, sources, or tools found.
             </div>
           ) : (
@@ -99,17 +98,17 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   onSelectAction(item.action, item.payload);
                   onClose();
                 }}
-                className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors group"
+                className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#EEEAF5]/70 cursor-pointer transition-colors group"
               >
                 <div>
-                  <div className="text-xs font-normal text-[#0B1926] group-hover:text-[#0E6DBB] transition-colors">
+                  <div className="text-[13px] font-medium text-[#15131A] group-hover:text-[#5625B8] transition-colors">
                     {item.title}
                   </div>
-                  <div className="text-[11px] text-slate-400 font-light mt-0.5">
+                  <div className="text-[12px] text-[#667085] mt-0.5 font-data">
                     {item.subtitle}
                   </div>
                 </div>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#0E6DBB] transition-colors" />
+                <ArrowRight className="w-4 h-4 text-[#85808D] group-hover:text-[#5625B8] transition-colors shrink-0" strokeWidth={1.75} />
               </div>
             ))
           )}

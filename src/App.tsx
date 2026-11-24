@@ -135,8 +135,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#EBF3FC]/80 via-[#F4F8FD]/50 via-10% via-white via-28% via-[#F2F7FD] via-75% to-[#D4E5FA] text-[#0B1926] relative pb-20 selection:bg-[#0E6DBB]/15 selection:text-[#0E6DBB]">
-      {/* Top Floating Glass Navigation */}
+    <div className="min-h-screen bg-[#F7F5F2] text-[#15131A] relative pb-20 selection:bg-[#5625B8]/15 selection:text-[#5625B8]">
+      {/* Top Navigation */}
       <FloatingNav
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -150,36 +150,37 @@ export default function App() {
         notificationsCount={notificationsCount}
       />
 
-      {/* Main Content Area */}
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-6 mt-4 sm:mt-5 space-y-5 sm:space-y-6">
+      {/* Main Content Area (full-width with balanced horizontal paddings on 4px grid) */}
+      <main className="w-full px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 space-y-6">
         {/* Tab Router */}
         {(activeTab === 'dashboard' || activeTab === 'analysis' || activeTab === 'act' || activeTab === 'reduce' || activeTab === 'users') && (
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="show"
-            className="space-y-5 sm:space-y-6"
+            className="space-y-6"
           >
-            {/* Space-between Top Header: Welcome, Name! on Left & Download CSV / Year Dropdown CTAs on Right */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1 pb-1">
+            {/* Overview Header: 20px mobile / 24px desktop weight 600 + Action CTAs */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-[#0B1926] tracking-tight">
+                <h1 className="text-[20px] sm:text-[24px] font-semibold text-[#15131A] tracking-tight leading-tight">
                   Welcome, Alex!
                 </h1>
-                <p className="text-xs sm:text-[13px] text-slate-500 font-normal mt-0.5">
-                  Here is your enterprise emissions & sustainability overview for {selectedYear}.
+                <p className="text-[13px] sm:text-[14px] text-[#667085] font-normal mt-1">
+                  Here is your enterprise emissions &amp; sustainability overview for{' '}
+                  <span className="font-data font-medium text-[#15131A]">{selectedYear}</span>.
                 </p>
               </div>
 
               {/* CTAs on Right Side */}
-              <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+              <div className="flex items-center gap-3 shrink-0">
                 {/* Download CSV CTA */}
                 <button
                   onClick={handleExportCSV}
-                  className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl bg-white/75 hover:bg-white text-slate-700 hover:text-[#0B1926] backdrop-blur-md border border-white/90 shadow-2xs hover:shadow-xs transition-all text-xs sm:text-[13px] font-medium cursor-pointer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#5625B8] hover:bg-[#461D98] text-[#FFFFFF] border border-[#5625B8] shadow-xs transition-colors text-[13px] font-medium cursor-pointer whitespace-nowrap"
                   title="Export audited emissions data to CSV"
                 >
-                  <Download className="w-4 h-4 text-[#0E6DBB]" />
+                  <Download className="w-4 h-4" strokeWidth={1.75} />
                   <span>Download CSV</span>
                 </button>
 
@@ -187,11 +188,11 @@ export default function App() {
                 <div className="relative">
                   <button
                     onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                    className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl bg-white/75 hover:bg-white text-slate-800 backdrop-blur-md border border-white/90 shadow-2xs hover:shadow-xs transition-all text-xs sm:text-[13px] font-medium cursor-pointer"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#FFFFFF] hover:bg-[#EEEAF5]/60 text-[#15131A] border border-[#D8D2DF] shadow-2xs transition-colors text-[13px] font-medium cursor-pointer whitespace-nowrap"
                   >
-                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                    <span className="font-data font-semibold text-[#0B1926]">{selectedYear}</span>
-                    <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isYearDropdownOpen ? 'rotate-180' : ''}`} />
+                    <Calendar className="w-4 h-4 text-[#667085]" strokeWidth={1.75} />
+                    <span className="font-data font-medium text-[#15131A]">{selectedYear}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-[#85808D] transition-transform duration-200 ${isYearDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {isYearDropdownOpen && (
@@ -201,9 +202,9 @@ export default function App() {
                         onClick={() => setIsYearDropdownOpen(false)}
                       />
                       <div
-                        className="absolute right-0 mt-1.5 w-36 py-1.5 bg-white/95 backdrop-blur-2xl border border-white/90 rounded-2xl shadow-[0_12px_32px_rgba(15,23,42,0.12)] z-50 text-xs overflow-hidden"
+                        className="absolute right-0 mt-2 w-40 py-1.5 bg-[#FFFFFF] border border-[#D8D2DF] rounded-xl shadow-[0_12px_32px_rgba(21,19,26,0.12)] z-50 text-[13px] overflow-hidden"
                       >
-                        <div className="px-3 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                        <div className="px-3 py-1.5 text-[11px] font-medium text-[#85808D] uppercase tracking-wider">
                           Reporting Year
                         </div>
                         {availableYears.map((year) => (
@@ -215,13 +216,13 @@ export default function App() {
                             }}
                             className={`w-full px-3 py-2 text-left font-data flex items-center justify-between transition-colors cursor-pointer ${
                               selectedYear === year
-                                ? 'bg-[#0E6DBB]/10 text-[#0E6DBB] font-semibold'
-                                : 'text-slate-700 hover:bg-slate-50'
+                                ? 'bg-[#EEEAF5] text-[#5625B8] font-semibold'
+                                : 'text-[#15131A] hover:bg-[#F7F5F2]'
                             }`}
                           >
                             <span>{year} Annual</span>
                             {selectedYear === year && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#0E6DBB]" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#5625B8]" />
                             )}
                           </button>
                         ))}
@@ -232,8 +233,8 @@ export default function App() {
               </div>
             </div>
 
-            {/* Top Row: 60% Total Emissions Card + 40% Total Emissions Offset Card */}
-            <div className="grid grid-cols-1 lg:grid-cols-10 gap-5 sm:gap-6 items-stretch">
+            {/* Top Row: 60% Total Emissions Card + 40% Project Status Card */}
+            <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 items-stretch">
               <motion.div variants={cardVariants} className="lg:col-span-6 flex flex-col">
                 <TotalEmissionsCard
                   data={currentData}
@@ -250,8 +251,8 @@ export default function App() {
               </motion.div>
             </div>
 
-            {/* Bottom Stack: 60% Monthly Emissions Card + 40% Top 5 Emitters Card */}
-            <div className="grid grid-cols-1 lg:grid-cols-10 gap-5 sm:gap-6 items-stretch">
+            {/* Bottom Row: 60% Monthly Emissions Card + 40% Top 5 Emitters Card */}
+            <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 items-stretch">
               <motion.div variants={cardVariants} className="lg:col-span-6 flex flex-col">
                 <MonthlyTimelineCard data={currentData} />
               </motion.div>

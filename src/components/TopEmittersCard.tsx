@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { Building2, Flame, ArrowUpRight, ArrowDownRight, ChevronRight } from 'lucide-react';
 import { YearEmissionsData, EmitterItem } from '../types';
 
 interface TopEmittersCardProps {
   data: YearEmissionsData;
   onSelectEmitter?: (emitter: EmitterItem) => void;
 }
+
+const getScopeBarColor = (scope: string) => {
+  if (scope === 'Scope 1') return '#5625B8'; // Violet
+  if (scope === 'Scope 2') return '#F46A1F'; // Deep Orange
+  return '#2563EB'; // Blue (Scope 3)
+};
 
 export const TopEmittersCard: React.FC<TopEmittersCardProps> = ({
   data
@@ -16,36 +21,36 @@ export const TopEmittersCard: React.FC<TopEmittersCardProps> = ({
   const maxEmissions = Math.max(...items.map((i) => i.emissions));
 
   return (
-    <div className="glass-card-top p-5 sm:p-6 lg:p-7 relative overflow-hidden flex flex-col justify-between h-full hover:shadow-[0_16px_40px_rgba(11,25,38,0.06)] hover:border-white transition-all duration-300">
+    <div className="glass-card-top p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between h-full">
       {/* Header and Toggle Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-3.5 border-b border-slate-200/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#D8D2DF]">
         <div>
-          <h2 className="text-base sm:text-[19px] font-semibold text-[#0B1926] tracking-tight">
+          <h2 className="text-[20px] font-semibold text-[#15131A] tracking-tight leading-snug">
             Top 5 Emitters (tCO2e)
           </h2>
-          <p className="text-xs text-slate-500 font-normal mt-0.5">
+          <p className="text-[13px] text-[#667085] font-normal mt-0.5">
             Critical hotspots for prioritized mitigation intervention
           </p>
         </div>
 
-        {/* Sources vs Facilities Segmented Toggle matching Karbon reference */}
-        <div className="flex items-center p-1 bg-white/60 backdrop-blur-md rounded-full border border-white/80 shadow-2xs text-xs self-start sm:self-auto">
+        {/* Sources vs Facilities Segmented Toggle */}
+        <div className="flex items-center p-1 bg-[#EEEAF5] rounded-lg border border-[#D8D2DF] text-[12px] self-start sm:self-auto">
           <button
             onClick={() => setEmitterMode('sources')}
-            className={`px-3.5 py-1 rounded-full transition-all cursor-pointer ${
+            className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
               emitterMode === 'sources'
-                ? 'bg-black text-white shadow-xs font-medium'
-                : 'text-slate-600 hover:text-black font-normal'
+                ? 'bg-[#5625B8] text-[#FFFFFF] shadow-2xs font-medium'
+                : 'text-[#667085] hover:text-[#15131A] font-medium'
             }`}
           >
             Sources
           </button>
           <button
             onClick={() => setEmitterMode('facilities')}
-            className={`px-3.5 py-1 rounded-full transition-all cursor-pointer ${
+            className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
               emitterMode === 'facilities'
-                ? 'bg-black text-white shadow-xs font-medium'
-                : 'text-slate-600 hover:text-black font-normal'
+                ? 'bg-[#5625B8] text-[#FFFFFF] shadow-2xs font-medium'
+                : 'text-[#667085] hover:text-[#15131A] font-medium'
             }`}
           >
             Facilities
@@ -53,53 +58,54 @@ export const TopEmittersCard: React.FC<TopEmittersCardProps> = ({
         </div>
       </div>
 
-      {/* List with frosted glass item containers */}
-      <div className="space-y-2.5 my-auto py-2">
+      {/* List Items */}
+      <div className="space-y-2.5 my-auto py-3">
         {items.map((item, idx) => {
           const widthPct = Math.round((item.emissions / maxEmissions) * 100);
+          const barColor = getScopeBarColor(item.primaryScope);
 
           return (
             <div
               key={item.id}
-              className="p-2.5 sm:p-3 rounded-2xl bg-white/60 hover:bg-white/80 backdrop-blur-md border border-white/85 shadow-[0_2px_8px_rgba(15,23,42,0.03)] transition-all duration-200"
+              className="p-3 rounded-xl bg-[#F7F5F2] hover:bg-[#EEEAF5]/60 border border-[#D8D2DF] transition-colors"
             >
-              {/* Top row: Name on left, exact numeric emissions on right */}
-              <div className="flex items-center justify-between text-xs text-[#0B1926] mb-1">
+              {/* Top row: Rank + Name on left, numeric emissions on right */}
+              <div className="flex items-center justify-between text-[13px] text-[#15131A] mb-1.5">
                 <div className="flex items-center gap-2 truncate pr-2">
-                  <span className="text-[11px] font-data font-semibold text-slate-500 bg-white/90 px-2 py-0.5 rounded-lg border border-white/90 shadow-2xs shrink-0">
+                  <span className="text-[11px] font-data font-semibold text-[#5625B8] bg-[#FFFFFF] px-1.5 py-0.5 rounded-md border border-[#D8D2DF] shrink-0">
                     0{idx + 1}
                   </span>
-                  <span className="font-medium text-slate-800 text-xs sm:text-[13px] truncate">
+                  <span className="font-medium text-[#15131A] text-[13px] truncate">
                     {item.name}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
-                  <span className="font-data font-semibold text-xs sm:text-[13px] text-[#0B1926]">
+                  <span className="font-data font-semibold text-[13px] text-[#15131A]">
                     {item.emissions.toLocaleString()}
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium">t</span>
+                  <span className="text-[11px] text-[#85808D] font-data">t</span>
                 </div>
               </div>
 
-              {/* Sleek Progress Bar */}
-              <div className="w-full bg-slate-200/50 h-1.5 rounded-full overflow-hidden my-1.5">
+              {/* Progress Bar color-coded to primary Scope */}
+              <div className="w-full bg-[#EEEAF5] h-1.5 rounded-full overflow-hidden my-1.5">
                 <div
-                  className="bg-[#0E6DBB] h-full rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${widthPct}%` }}
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${widthPct}%`, backgroundColor: barColor }}
                 />
               </div>
 
-              {/* Sub-label with primary scope & location */}
-              <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium mt-1">
-                <span>{item.location || item.primaryScope}</span>
-                <span className="flex items-center gap-0.5">
+              {/* Sub-label with primary scope / location & YoY status badge */}
+              <div className="flex items-center justify-between text-[11px] text-[#667085] font-medium mt-1">
+                <span className="truncate">{item.location || item.primaryScope}</span>
+                <span className="flex items-center gap-1 shrink-0">
                   {item.trend > 0 ? (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-data font-medium px-1.5 py-0.5 rounded-md border shadow-2xs bg-white/90 text-rose-600 border-rose-200/60">
+                    <span className="inline-flex items-center text-[11px] font-data font-medium px-1.5 py-0.5 rounded-md border bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]">
                       +{item.trend}% YoY
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-data font-medium px-1.5 py-0.5 rounded-md border shadow-2xs bg-white/90 text-emerald-700 border-emerald-200/60">
+                    <span className="inline-flex items-center text-[11px] font-data font-medium px-1.5 py-0.5 rounded-md border bg-[#ECFDF3] text-[#15803D] border-[#BBF7D0]">
                       {item.trend}% YoY
                     </span>
                   )}
@@ -111,13 +117,13 @@ export const TopEmittersCard: React.FC<TopEmittersCardProps> = ({
       </div>
 
       {/* Footer indicator */}
-      <div className="pt-3.5 mt-1 border-t border-slate-200/60 flex items-center justify-between text-xs">
-        <span className="flex items-center gap-1.5 text-xs text-slate-500 font-normal">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#0E6DBB]" />
-          Prioritized operational mitigation levers
+      <div className="pt-4 mt-1 border-t border-[#D8D2DF] flex items-center justify-between text-[12px]">
+        <span className="flex items-center gap-1.5 text-[#667085]">
+          <span className="w-2 h-2 rounded-full bg-[#5625B8]" />
+          Prioritized mitigation levers
         </span>
-        <span className="font-data text-slate-600 font-medium text-[11px]">
-          Top 5 accounts for 58% of gross volume
+        <span className="font-data text-[#15131A] font-medium text-[11px]">
+          58% of gross volume
         </span>
       </div>
     </div>

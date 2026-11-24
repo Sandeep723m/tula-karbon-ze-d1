@@ -18,7 +18,7 @@ export const EMISSIONS_DATA: Record<number, YearEmissionsData> = {
         scope: 'Scope 1',
         percentage: 17,
         value: 24072,
-        color: '#F87171', // Muted Coral
+        color: '#5625B8', // Deep Violet (Scope 1)
         description: 'Direct emissions from owned furnaces, fleet vehicles, and on-site boilers.'
       },
       scope2: {
@@ -26,7 +26,7 @@ export const EMISSIONS_DATA: Record<number, YearEmissionsData> = {
         scope: 'Scope 2',
         percentage: 9,
         value: 12744,
-        color: '#A78BFA', // Amethyst
+        color: '#F46A1F', // Deep Orange (Scope 2)
         description: 'Indirect emissions from purchased electricity, steam, and facility cooling.'
       },
       scope3: {
@@ -34,7 +34,7 @@ export const EMISSIONS_DATA: Record<number, YearEmissionsData> = {
         scope: 'Scope 3',
         percentage: 74,
         value: 104784,
-        color: '#0E6DBB', // Cyber Blue / Enterprise Slate
+        color: '#2563EB', // Enterprise Blue (Scope 3)
         description: 'Upstream freight, business flights, supplier materials, and product lifecycle.'
       }
     },
@@ -180,7 +180,7 @@ export const EMISSIONS_DATA: Record<number, YearEmissionsData> = {
         scope: 'Scope 1',
         percentage: 16,
         value: 21184,
-        color: '#F87171',
+        color: '#5625B8',
         description: 'Direct emissions reduced through heat pump electrification.'
       },
       scope2: {
@@ -188,7 +188,7 @@ export const EMISSIONS_DATA: Record<number, YearEmissionsData> = {
         scope: 'Scope 2',
         percentage: 7,
         value: 9268,
-        color: '#A78BFA',
+        color: '#F46A1F',
         description: 'Procured 65% clean solar PPA power across major manufacturing sites.'
       },
       scope3: {
@@ -196,7 +196,7 @@ export const EMISSIONS_DATA: Record<number, YearEmissionsData> = {
         scope: 'Scope 3',
         percentage: 77,
         value: 101948,
-        color: '#0E6DBB',
+        color: '#2563EB',
         description: 'Supply chain freight consolidation and regional routing.'
       }
     },
@@ -342,7 +342,7 @@ export const EMISSIONS_DATA: Record<number, YearEmissionsData> = {
         scope: 'Scope 1',
         percentage: 18,
         value: 24804,
-        color: '#F87171',
+        color: '#5625B8',
         description: 'Facility boilers and transport operations.'
       },
       scope2: {
@@ -350,7 +350,7 @@ export const EMISSIONS_DATA: Record<number, YearEmissionsData> = {
         scope: 'Scope 2',
         percentage: 11,
         value: 15158,
-        color: '#A78BFA',
+        color: '#F46A1F',
         description: 'Standard grid mix electricity across operations.'
       },
       scope3: {
@@ -358,7 +358,7 @@ export const EMISSIONS_DATA: Record<number, YearEmissionsData> = {
         scope: 'Scope 3',
         percentage: 71,
         value: 97838,
-        color: '#0E6DBB',
+        color: '#2563EB',
         description: 'High-volume international logistics and business travel.'
       }
     },
@@ -504,7 +504,7 @@ export const EMISSIONS_DATA: Record<number, YearEmissionsData> = {
         scope: 'Scope 1',
         percentage: 15,
         value: 17730,
-        color: '#F87171',
+        color: '#5625B8',
         description: 'Direct fleet converted to 85% commercial BEVs.'
       },
       scope2: {
@@ -512,7 +512,7 @@ export const EMISSIONS_DATA: Record<number, YearEmissionsData> = {
         scope: 'Scope 2',
         percentage: 5,
         value: 5910,
-        color: '#A78BFA',
+        color: '#F46A1F',
         description: '92% of operational sites covered by certified green energy contracts.'
       },
       scope3: {
@@ -520,7 +520,7 @@ export const EMISSIONS_DATA: Record<number, YearEmissionsData> = {
         scope: 'Scope 3',
         percentage: 80,
         value: 94560,
-        color: '#0E6DBB',
+        color: '#2563EB',
         description: 'Low-carbon marine logistics and supplier decarbonization pledges.'
       }
     },
