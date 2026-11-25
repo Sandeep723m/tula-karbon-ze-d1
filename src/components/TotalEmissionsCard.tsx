@@ -12,13 +12,18 @@ interface TotalEmissionsCardProps {
 }
 
 function BenchmarkBar({ value, total, color, label }: { value: number; total: number; color: string; label: string }) {
+  const gradientId = `benchmark-${React.useId().replace(/:/g, '')}`;
   const ratio = Math.max(0, Math.min(1, value / Math.max(total, 1)));
-  const valueHeight = 40 * ratio;
-  return <svg viewBox="0 0 32 48" className="h-12 w-8 shrink-0" role="img" aria-label={`${label}: ${value.toLocaleString()} tCO₂e compared with current emissions of ${total.toLocaleString()} tCO₂e`}>
-    <rect x="4" y="4" width="9" height="40" rx="4.5" fill={`${color}24`} />
-    <rect x="19" y="4" width="9" height="40" rx="4.5" fill="#E6E2EA" />
-    <rect x="4" y={44 - valueHeight} width="9" height={valueHeight} rx="4.5" fill={color} opacity=".9" />
-    <rect x="19" y="4" width="9" height="40" rx="4.5" fill="#8A8491" opacity=".7" />
+  const heights = [10, 15, 20, 25, 31, 37];
+  const activeCount = ratio > 0 ? Math.max(1, Math.ceil(ratio * heights.length)) : 0;
+  return <svg viewBox="0 0 76 44" className="h-11 w-[76px] shrink-0" role="img" aria-label={`${label}: ${value.toLocaleString()} tCO₂e, ${Math.round(ratio * 100)}% of current emissions`}>
+    <defs>
+      <linearGradient id={gradientId} x1="0%" y1="100%" x2="0%" y2="0%">
+        <stop offset="0%" stopColor={color} stopOpacity=".16" />
+        <stop offset="100%" stopColor={color} stopOpacity=".72" />
+      </linearGradient>
+    </defs>
+    {heights.map((height, index) => <rect key={index} x={index * 12 + 2} y={40 - height} width="8" height={height} rx="4" fill={`url(#${gradientId})`} opacity={index < activeCount ? 1 : .2} />)}
   </svg>;
 }
 
@@ -83,14 +88,16 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
     return (val / 1000).toFixed(1) + 'k';
   };
 
-  const dotColumns = 22;
+  const dotColumns = 21;
   const dotRows = 7;
-  const dotsPerScope = dotColumns * dotRows;
+  const dotPitchX = 19;
+  const dotPitchY = 20;
   const scopeDotBands = [
-    { key: 'scope1', metric: scope1, color: '#5625B8' },
-    { key: 'scope2', metric: scope2, color: '#F46A1F' },
-    { key: 'scope3', metric: scope3, color: '#2563EB' }
+    { key: 'scope1', metric: scope1, color: '#5625B8', rows: 2 },
+    { key: 'scope2', metric: scope2, color: '#F46A1F', rows: 2 },
+    { key: 'scope3', metric: scope3, color: '#2563EB', rows: 3 }
   ];
+  const scopeRows = scopeDotBands.flatMap((scope) => Array.from({ length: scope.rows }, () => scope));
 
   const pieSegments = (() => {
     const total = scopeDotBands.reduce((sum, item) => sum + item.metric.value, 0) || 1;
@@ -158,7 +165,7 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
       {/* 2. Main Visual Body: Scope dot matrix + metric breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 lg:gap-5 items-center my-auto py-3">
         {/* Left Column: Dot matrix showing the share contributed by each scope */}
-        <div className="md:col-span-5 flex flex-col items-stretch justify-center relative">
+        <div className="md:col-span-6 flex flex-col items-stretch justify-center relative">
           <div className="w-full px-1">
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
               <span className="text-[32px] sm:text-[36px] font-semibold font-data tracking-[-0.04em] text-[#16132B] leading-none">{formatK(currentTotal)}</span>
@@ -169,21 +176,19 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
               {activeTrend.isReduction ? '-' : '+'}{activeTrend.diffPct}% from last month
             </div>
             <AnimatePresence mode="wait" initial={false}>
-              {compositionView === 'dots' ? <motion.div key="scope-dots" className="mt-2 space-y-1" role="group" aria-label={`Scope emissions composition: Scope 1 ${scope1.percentage} percent, Scope 2 ${scope2.percentage} percent, Scope 3 ${scope3.percentage} percent`} initial={reduceMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduceMotion ? 0 : 0.18 }}>
-              <svg viewBox={`0 0 ${dotColumns * 13} ${dotRows * 15}`} className="w-full h-[118px]" role="img" aria-label={`Scope share dot matrix: Scope 1 ${scope1.percentage}%, Scope 2 ${scope2.percentage}%, Scope 3 ${scope3.percentage}%`}>
-                {Array.from({ length: dotsPerScope }, (_, index) => {
+              {compositionView === 'dots' ? <motion.div key="scope-dots" className="mt-3" role="group" aria-label={`Scope emissions composition: Scope 1 ${scope1.percentage} percent, Scope 2 ${scope2.percentage} percent, Scope 3 ${scope3.percentage} percent`} initial={reduceMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduceMotion ? 0 : 0.18 }}>
+              <svg viewBox={`0 0 ${dotColumns * dotPitchX} ${dotRows * dotPitchY}`} className="block w-full h-auto max-h-[154px]" role="img" aria-label={`Scope share dot matrix: Scope 1 ${scope1.percentage}%, Scope 2 ${scope2.percentage}%, Scope 3 ${scope3.percentage}%. Each scope is shown in its own two or three row band.`}>
+                {Array.from({ length: dotRows * dotColumns }, (_, index) => {
                   const col = index % dotColumns;
                   const row = Math.floor(index / dotColumns);
-                  const s1Dots = Math.round(scope1.percentage / 100 * dotsPerScope);
-                  const s2Dots = Math.round(scope2.percentage / 100 * dotsPerScope);
-                  const key = index < s1Dots ? 'scope1' : index < s1Dots + s2Dots ? 'scope2' : 'scope3';
-                  const color = scopeDotBands.find((scope) => scope.key === key)?.color ?? '#2563EB';
-                  const dimmed = selectedScope !== 'all' && selectedScope !== key;
-                  const scopeStart = key === 'scope1' ? 0 : key === 'scope2' ? Math.round(scope1.percentage / 100 * dotsPerScope) : Math.round((scope1.percentage + scope2.percentage) / 100 * dotsPerScope);
-                  const scopeCount = key === 'scope1' ? Math.round(scope1.percentage / 100 * dotsPerScope) : key === 'scope2' ? Math.round(scope2.percentage / 100 * dotsPerScope) : dotsPerScope - scopeStart;
-                  const dotWithinScope = index - scopeStart;
-                  const fade = Math.max(0.3, 1 - dotWithinScope / Math.max(scopeCount, 1) * 0.68);
-                  return <motion.circle key={index} cx={6 + col * 13} cy={7 + row * 15} r="4.1" fill={color} opacity={dimmed ? 0.13 : fade} initial={reduceMotion ? false : { scale: .65, opacity: 0 }} animate={{ scale: 1, opacity: dimmed ? 0.13 : fade }} transition={{ duration: reduceMotion ? 0 : .2, delay: reduceMotion ? 0 : index * .0008 }} />;
+                  const scope = scopeRows[row];
+                  const dimmed = selectedScope !== 'all' && selectedScope !== scope.key;
+                  // Match the reference's saturated-to-soft dot field while using only the three real scope values.
+                  const fadeStart = 0.35 + (scope.metric.percentage / 100) * 0.5;
+                  const progress = col / (dotColumns - 1);
+                  const fade = progress <= fadeStart ? 1 : Math.max(0.22, 1 - ((progress - fadeStart) / (1 - fadeStart)) * 0.78);
+                  const targetOpacity = dimmed ? 0.12 : fade;
+                  return <motion.circle key={`${scope.key}-${row}-${col}`} cx={dotPitchX / 2 + col * dotPitchX} cy={dotPitchY / 2 + row * dotPitchY} r="6.1" fill={scope.color} initial={reduceMotion ? false : { scale: .72, opacity: 0 }} animate={{ scale: 1, opacity: targetOpacity }} transition={{ duration: reduceMotion ? 0 : .2, delay: reduceMotion ? 0 : index * .0008 }} />;
                 })}
               </svg>
               </motion.div> : <motion.div key="scope-pie" className="mt-1 flex justify-center" role="group" aria-label="Scope emissions pie chart" initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }} transition={{ duration: reduceMotion ? 0 : 0.2 }}>
@@ -205,7 +210,7 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
         </div>
 
         {/* Right Column: Detailed Scope Breakdown */}
-        <div className="md:col-span-7 flex flex-col justify-center space-y-2 pl-0 md:pl-2">
+        <div className="md:col-span-6 flex flex-col justify-center space-y-2 pl-0 md:pl-2">
           <div className="space-y-2">
             {/* Scope 1 Bar (Violet) */}
             <div
