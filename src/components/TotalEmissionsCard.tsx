@@ -344,9 +344,11 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
       {/* 3. Bottom Row: Comparative Trajectory Benchmarks */}
       <div className="grid grid-cols-3 gap-2.5 pt-3.5 border-t border-[#E5E0EA] text-[12px]">
         <div className="min-w-0 p-3 rounded-2xl bg-gradient-to-br from-white/80 to-[#F7F1FF]/80 border border-[#E8DFF4] flex items-center gap-2.5">
-          <BarChart3 className="w-4 h-4 shrink-0 text-[#7E35E8]" />
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] text-[#667085] font-medium truncate">Prev year ({data.year - 1})</div>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <BarChart3 aria-hidden="true" className="h-4 w-4 shrink-0 text-[#7E35E8]" />
+              <div className="text-[10px] text-[#667085] font-medium truncate">Prev year ({data.year - 1})</div>
+            </div>
             <div className="font-semibold text-[#15131A] font-data text-[15px] mt-0.5">{formatK(data.previousYear)}</div>
             <div className="inline-flex items-center gap-1 text-[10px] font-medium font-data text-[#15803D] bg-[#E9FBEF] border border-[#B7F0C8] rounded-full px-1.5 py-0.5 mt-1"><ArrowUpRight className="w-3 h-3 shrink-0" /><span className="truncate">+{data.previousYearPct}% YoY</span></div>
           </div>
@@ -354,9 +356,11 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
         </div>
 
         <div className="min-w-0 p-3 rounded-2xl bg-gradient-to-br from-white/80 to-[#FFF2F7]/80 border border-[#F0DEE9] flex items-center gap-2.5">
-          <Target className="w-4 h-4 shrink-0 text-[#B45BF0]" />
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] text-[#667085] font-medium truncate">Baseline (2012)</div>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Target aria-hidden="true" className="h-4 w-4 shrink-0 text-[#B45BF0]" />
+              <div className="text-[10px] text-[#667085] font-medium truncate">Baseline (2012)</div>
+            </div>
             <div className="font-semibold text-[#15131A] font-data text-[15px] mt-0.5">{formatK(data.baselineYear)}</div>
             <div className="inline-flex items-center gap-1 text-[10px] font-medium font-data text-[#B91C1C] bg-[#FEF0F0] border border-[#FFD0D0] rounded-full px-1.5 py-0.5 mt-1"><ArrowUpRight className="w-3 h-3 shrink-0" /><span className="truncate">+{data.baselineYearPct}%</span></div>
           </div>
@@ -364,9 +368,11 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
         </div>
 
         <div className="min-w-0 p-3 rounded-2xl bg-gradient-to-br from-white/80 to-[#FFF8E9]/85 border border-[#F2E6CF] flex items-center gap-2.5">
-          <Crosshair className="w-4 h-4 shrink-0 text-[#F0A900]" />
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] text-[#667085] font-medium truncate">Targeted deviation</div>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Crosshair aria-hidden="true" className="h-4 w-4 shrink-0 text-[#F0A900]" />
+              <div className="text-[10px] text-[#667085] font-medium truncate">Targeted deviation</div>
+            </div>
             <div className="font-semibold text-[#15131A] font-data text-[15px] mt-0.5">{formatK(data.deviationFromTarget)}</div>
             <div className="inline-flex items-center gap-1 text-[10px] font-medium font-data text-[#A65B00] bg-[#FFF6E4] border border-[#F9DDA4] rounded-full px-1.5 py-0.5 mt-1"><ArrowUpRight className="w-3 h-3 shrink-0" /><span className="truncate">+{data.deviationPct}%</span></div>
           </div>
