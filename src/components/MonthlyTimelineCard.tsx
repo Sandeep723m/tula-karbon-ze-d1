@@ -44,6 +44,58 @@ const formatAxis = (value: number) => {
   return `${sign}${magnitude >= 1000 ? `${(magnitude / 1000).toLocaleString()}k` : magnitude.toLocaleString()}`;
 };
 
+interface BiweeklyPeriod extends MonthlyEmissions {
+  period: number;
+  startDay: number;
+  endDay: number;
+}
+
+/** Allocate each real monthly total across 26 equal-length reporting periods by calendar-day overlap. */
+function allocateBiweeklyPeriods(months: MonthlyEmissions[], year: number): BiweeklyPeriod[] {
+  const yearDays = (new Date(Date.UTC(year + 1, 0, 1)).getTime() - new Date(Date.UTC(year, 0, 1)).getTime()) / 86_400_000;
+  const monthRanges = months.map((month, index) => {
+    const startDay = months.slice(0, index).reduce((sum, item, monthIndex) => sum + new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate(), 0);
+    const days = new Date(Date.UTC(year, index + 1, 0)).getUTCDate();
+    return { month, startDay, endDay: startDay + days, days };
+  });
+
+  return Array.from({ length: 26 }, (_, index) => {
+    const startDay = Math.round(index * yearDays / 26);
+    const endDay = Math.round((index + 1) * yearDays / 26);
+    const totals = { scope1: 0, scope2: 0, scope3: 0, total: 0 };
+    monthRanges.forEach(({ month, startDay: monthStart, endDay: monthEnd, days }) => {
+      const overlap = Math.max(0, Math.min(endDay, monthEnd) - Math.max(startDay, monthStart));
+      if (!overlap) return;
+      const share = overlap / days;
+      totals.scope1 += month.scope1 * share;
+      totals.scope2 += month.scope2 * share;
+      totals.scope3 += month.scope3 * share;
+      totals.total += month.total * share;
+    });
+    const periodStart = new Date(Date.UTC(year, 0, 1 + startDay));
+    const periodEnd = new Date(Date.UTC(year, 0, endDay - 1));
+    const dateLabel = (date: Date) => `${date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })} ${date.getUTCDate()}`;
+    return {
+      month: `${dateLabel(periodStart)}–${dateLabel(periodEnd)}`,
+      scope1: totals.scope1,
+      scope2: totals.scope2,
+      scope3: totals.scope3,
+      total: totals.total,
+      period: index + 1,
+      startDay,
+      endDay
+    };
+  });
+}
+
+function niceAxisMaximum(value: number) {
+  const safeValue = Math.max(value, 1);
+  const magnitude = 10 ** Math.floor(Math.log10(safeValue));
+  const normalized = safeValue / magnitude;
+  const step = [1, 1.5, 2, 2.5, 3, 4, 5, 7.5, 10].find((candidate) => candidate >= normalized) ?? 10;
+  return step * magnitude;
+}
+
 /** Reusable SVG capsule: height is mapped directly to the supplied value. */
 export function DivergingCapsule({
   x,
@@ -99,13 +151,13 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
   const chartInView = useInView(chartRef, { once: true, amount: 0.2 });
   const hasEntered = useRef(false);
   const patternId = `monthly-diverge-${useId().replace(/:/g, '')}`;
-  const months = data.monthly;
-  const values = months.map((month) => valueForScope(month, scopeFilter));
+  const periods = allocateBiweeklyPeriods(data.monthly, data.year);
+  const values = periods.map((period) => valueForScope(period, scopeFilter));
   const changes = values.map((value, index) => index === 0 ? null : value - values[index - 1]);
   const maxChange = Math.max(1, ...changes.map((value) => Math.abs(value ?? 0)));
-  const axisMax = Math.max(100, Math.ceil(maxChange / 500) * 500);
+  const axisMax = niceAxisMaximum(maxChange);
   const activeIndex = hoveredIndex ?? selectedIndex;
-  const activeMonth = activeIndex === null ? null : months[activeIndex];
+  const activePeriod = activeIndex === null ? null : periods[activeIndex];
   const activeChange = activeIndex === null ? null : changes[activeIndex];
   const total = values.reduce((sum, value) => sum + value, 0);
   const chartWidth = 1000;
@@ -116,15 +168,15 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
   const baseline = 164;
   const plotHalfHeight = 126;
   const plotWidth = plotRight - plotLeft;
-  const cellWidth = plotWidth / Math.max(months.length, 1);
-  const capsuleWidth = Math.min(42, cellWidth * 0.56);
+  const cellWidth = plotWidth / Math.max(periods.length, 1);
+  const capsuleWidth = cellWidth * 0.8;
   const ticks = [axisMax, axisMax / 2, 0, -axisMax / 2, -axisMax];
   const displayedSeries: ChartSeries[] = scopeColors
     .filter((series) => scopeFilter === 'all' || scopeFilter === series.id)
-    .map((series) => ({ ...series, values: months.map((month) => month[series.id]) }));
-  const stackedMax = Math.max(1, ...months.map((_, index) => displayedSeries.reduce((sum, series) => sum + series.values[index], 0))) * 1.08;
+    .map((series) => ({ ...series, values: periods.map((period) => period[series.id]) }));
+  const stackedMax = Math.max(1, ...periods.map((_, index) => displayedSeries.reduce((sum, series) => sum + series.values[index], 0))) * 1.08;
   const stackedBands = (() => {
-    const cumulative = months.map(() => 0);
+    const cumulative = periods.map(() => 0);
     return displayedSeries.map((series) => {
       const lower = [...cumulative];
       series.values.forEach((value, index) => { cumulative[index] += value; });
@@ -132,6 +184,12 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
     });
   })();
   const xFor = (index: number) => plotLeft + (index + 0.5) * cellWidth;
+  const monthAxis = data.monthly.map((month, index) => {
+    const daysBeforeMonth = data.monthly.slice(0, index).reduce((sum, _, monthIndex) => sum + new Date(Date.UTC(data.year, monthIndex + 1, 0)).getUTCDate(), 0);
+    const daysInMonth = new Date(Date.UTC(data.year, index + 1, 0)).getUTCDate();
+    const yearDays = periods[periods.length - 1]?.endDay ?? 365;
+    return { label: month.month, x: plotLeft + (daysBeforeMonth + daysInMonth / 2) / yearDays * plotWidth };
+  });
 
   useEffect(() => {
     if (chartInView) hasEntered.current = true;
@@ -142,7 +200,7 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
   const onKeyDown = (event: React.KeyboardEvent<SVGGElement>, index: number) => {
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault();
-      const next = (index + (event.key === 'ArrowRight' ? 1 : -1) + months.length) % months.length;
+      const next = (index + (event.key === 'ArrowRight' ? 1 : -1) + periods.length) % periods.length;
       event.currentTarget.parentElement?.querySelectorAll<SVGGElement>('[data-month-point]')[next]?.focus();
     }
     if (event.key === 'Enter' || event.key === ' ') {
@@ -151,7 +209,7 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
     }
   };
 
-  const selectedTooltip = activeIndex !== null && activeMonth ? {
+  const selectedTooltip = activeIndex !== null && activePeriod ? {
     left: `${Math.max(12, Math.min(88, ((plotLeft + (activeIndex + 0.5) * cellWidth) / chartWidth) * 100))}%`,
     current: values[activeIndex],
     previous: activeIndex > 0 ? values[activeIndex - 1] : null,
@@ -162,8 +220,8 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
     <section className="glass-card-top p-5 sm:p-6 relative flex flex-col h-full" aria-labelledby="monthly-emissions-title">
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0EA]">
         <div>
-          <h2 id="monthly-emissions-title" className="text-[20px] font-semibold tracking-tight text-[#19171D]">Total Emissions over Months</h2>
-          <p className="mt-0.5 text-[12px] font-normal text-[#667085]">Monthly emissions · {data.year}</p>
+          <h2 id="monthly-emissions-title" className="text-[20px] font-semibold tracking-tight text-[#19171D]">Total Emissions · Biweekly</h2>
+          <p className="mt-0.5 text-[12px] font-normal text-[#667085]">26 periods · {data.year}</p>
         </div>
         <div className="flex items-center gap-0.5 p-1 bg-white/65 rounded-full border border-[#E5E0EA] text-[12px] self-start sm:self-auto" role="group" aria-label="Filter emissions by scope">
           {filters.map((filter) => <button key={filter.id} type="button" onClick={() => { setScopeFilter(filter.id); setSelectedIndex(null); }} aria-pressed={scopeFilter === filter.id} className={`px-2.5 py-1.5 rounded-full transition-colors cursor-pointer whitespace-nowrap ${scopeFilter === filter.id ? 'bg-[#6428D8] text-white shadow-sm font-semibold' : 'text-[#625B6B] hover:text-[#5625B8]'}`}>{filter.label}</button>)}
@@ -179,9 +237,9 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
 
       <div ref={chartRef} className="mt-3 flex min-h-[360px] flex-1 flex-col" onMouseLeave={() => setHoveredIndex(null)}>
         <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-[12px] font-medium text-[#494454]">{chartView === 'diverging' ? 'Monthly change (tCO₂e)' : 'Scope breakdown (tCO₂e)'}</h3>
-          <div className="inline-flex items-center gap-0.5 rounded-full border border-[#E5E0EA] bg-white/65 p-0.5" role="group" aria-label="Choose monthly chart">
-            <button type="button" aria-pressed={chartView === 'diverging'} onClick={() => setChartView('diverging')} className={`rounded-full px-2.5 py-1.5 text-[11px] font-medium transition-colors ${chartView === 'diverging' ? 'bg-[#6428D8] text-white shadow-sm' : 'text-[#625B6B] hover:text-[#5625B8]'}`}>Monthly change</button>
+          <h3 className="text-[12px] font-medium text-[#494454]">{chartView === 'diverging' ? 'Biweekly change (tCO₂e)' : 'Biweekly scope breakdown (tCO₂e)'}</h3>
+          <div className="inline-flex items-center gap-0.5 rounded-full border border-[#E5E0EA] bg-white/65 p-0.5" role="group" aria-label="Choose biweekly chart">
+            <button type="button" aria-pressed={chartView === 'diverging'} onClick={() => setChartView('diverging')} className={`rounded-full px-2.5 py-1.5 text-[11px] font-medium transition-colors ${chartView === 'diverging' ? 'bg-[#6428D8] text-white shadow-sm' : 'text-[#625B6B] hover:text-[#5625B8]'}`}>Biweekly change</button>
             <button type="button" aria-pressed={chartView === 'connected'} onClick={() => setChartView('connected')} className={`rounded-full px-2.5 py-1.5 text-[11px] font-medium transition-colors ${chartView === 'connected' ? 'bg-[#6428D8] text-white shadow-sm' : 'text-[#625B6B] hover:text-[#5625B8]'}`}>Scope breakdown</button>
           </div>
         </div>
@@ -189,16 +247,16 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
         <div className="relative flex-1" aria-live="off">
           <AnimatePresence mode="wait" initial={false}>
             {chartView === 'diverging' ? <motion.div key="monthly-diverging" className="absolute inset-0" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduceMotion ? undefined : { opacity: 0 }} transition={{ duration: reduceMotion ? 0 : 0.3 }}>
-              {selectedTooltip && activeMonth && <div role="tooltip" className="pointer-events-none absolute top-0 z-10 min-w-[190px] -translate-x-1/2 rounded-xl border border-[#E7E1EC] bg-white/95 px-3 py-2 shadow-[0_6px_18px_rgba(24,20,31,.12)] backdrop-blur-sm" style={{ left: selectedTooltip.left }}>
-                <p className="mb-1 text-[11px] font-semibold text-[#292433]">{activeMonth.month} {data.year}</p>
+              {selectedTooltip && activePeriod && <div role="tooltip" className="pointer-events-none absolute top-0 z-10 min-w-[190px] -translate-x-1/2 rounded-xl border border-[#E7E1EC] bg-white/95 px-3 py-2 shadow-[0_6px_18px_rgba(24,20,31,.12)] backdrop-blur-sm" style={{ left: selectedTooltip.left }}>
+                <p className="mb-1 text-[11px] font-semibold text-[#292433]">Period {activePeriod.period} · {activePeriod.month}, {data.year}</p>
                 <p className="text-[10px] text-[#625B6B]">Current <span className="float-right font-data font-medium text-[#19171D]">{formatEmission(selectedTooltip.current)} tCO₂e</span></p>
                 {selectedTooltip.previous !== null && <>
                   <p className="text-[10px] text-[#625B6B]">Previous <span className="float-right font-data text-[#19171D]">{formatEmission(selectedTooltip.previous)} tCO₂e</span></p>
                   <p className="text-[10px] text-[#625B6B]">Change <span className={`float-right font-data font-semibold ${(selectedTooltip.change ?? 0) > 0 ? 'text-[#B95A24]' : 'text-[#6242C7]'}`}>{(selectedTooltip.change ?? 0) > 0 ? '+' : ''}{formatEmission(selectedTooltip.change ?? 0)} tCO₂e</span></p>
                 </>}
-                <p className="mt-1 text-[9px] text-[#77717F]">Source: monthly emissions ledger</p>
+                <p className="mt-1 text-[9px] text-[#77717F]">Monthly ledger · prorated by days</p>
               </div>}
-              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="h-full w-full overflow-visible" role="group" aria-label={`Monthly diverging capsule chart for ${data.year}; changes compare each month with the previous month`}>
+              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="h-full w-full overflow-visible" role="group" aria-label={`Biweekly diverging capsule chart for ${data.year}; 26 periods estimated from monthly ledger totals, changes compare with the previous period`}>
                 <defs>
                   <linearGradient id={`${patternId}-positive`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#F58A42"/><stop offset="100%" stopColor="#FFD0A4"/></linearGradient>
                   <linearGradient id={`${patternId}-negative`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#6945D9"/><stop offset="100%" stopColor="#B9A3F7"/></linearGradient>
@@ -209,27 +267,27 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
                 </g>)}
                 <line x1={plotLeft} x2={plotRight} y1={baseline} y2={baseline} stroke="#77717F" strokeWidth="1.5" />
                 <text x={plotLeft - 12} y={baseline + 4} textAnchor="end" fill="#625B6B" fontFamily="IBM Plex Sans, sans-serif" fontSize="12" fontWeight="500">0</text>
-                {months.map((month, index) => {
+                {periods.map((period, index) => {
                   const change = changes[index];
                   const capsuleHeight = change === null ? 0 : Math.abs(change) / axisMax * plotHalfHeight;
                   const x = xFor(index);
                   const focused = activeIndex === index;
                   const dimmed = selectedIndex !== null && selectedIndex !== index;
                   const hoverDim = hoveredIndex !== null && hoveredIndex !== index && selectedIndex === null;
-                  return <g key={`${month.month}-${index}`} data-month-point tabIndex={0} role="button" aria-pressed={selectedIndex === index} aria-label={`${month.month} ${data.year}: current ${formatEmission(values[index])} tCO₂e${index > 0 ? `, previous ${formatEmission(values[index - 1])} tCO₂e, change ${change! > 0 ? '+' : ''}${formatEmission(change!)} tCO₂e` : ', no previous-month value available'}`} onFocus={() => setHoveredIndex(index)} onBlur={() => setHoveredIndex(null)} onMouseEnter={() => setHoveredIndex(index)} onClick={() => setSelectedIndex(selectedIndex === index ? null : index)} onKeyDown={(event) => onKeyDown(event, index)} className="group cursor-pointer outline-none">
+                  return <g key={`period-${period.period}`} data-month-point tabIndex={0} role="button" aria-pressed={selectedIndex === index} aria-label={`Period ${period.period}, ${period.month} ${data.year}: current ${formatEmission(values[index])} tCO₂e${index > 0 ? `, previous period ${formatEmission(values[index - 1])} tCO₂e, change ${change! > 0 ? '+' : ''}${formatEmission(change!)} tCO₂e` : ', no previous-period value available'}`} onFocus={() => setHoveredIndex(index)} onBlur={() => setHoveredIndex(null)} onMouseEnter={() => setHoveredIndex(index)} onClick={() => setSelectedIndex(selectedIndex === index ? null : index)} onKeyDown={(event) => onKeyDown(event, index)} className="group cursor-pointer outline-none">
                     {change !== null && <DivergingCapsule x={x} baseline={baseline} width={capsuleWidth} height={capsuleHeight} positive={change >= 0} positiveGradient={`${patternId}-positive`} negativeGradient={`${patternId}-negative`} visible={chartInView} playEntrance={playEntrance} delay={index * 0.025} opacity={dimmed ? 0.5 : hoverDim ? 0.72 : 1} reducedMotion={Boolean(reduceMotion)} />}
                     <rect x={x - cellWidth / 2} y={plotTop} width={cellWidth} height={chartHeight - plotTop - 32} fill="transparent" />
                     {change !== null && <rect x={x - capsuleWidth / 2 - 3} y={change >= 0 ? baseline - capsuleHeight - 3 : baseline - 3} width={capsuleWidth + 6} height={Math.max(capsuleHeight + 6, 12)} rx={Math.min((capsuleWidth + 6) / 2, (capsuleHeight + 6) / 2)} fill="none" stroke="transparent" strokeWidth="2" className="group-focus-visible:stroke-[#332B40]" />}
-                    <text x={x} y={chartHeight - 8} textAnchor="middle" fill={focused ? '#5625B8' : '#77717F'} fontFamily="IBM Plex Sans, sans-serif" fontSize="12" fontWeight={focused ? 500 : 400}>{month.month}</text>
                   </g>;
                 })}
+                {monthAxis.map(({ label, x }) => <text key={label} x={x} y={chartHeight - 8} textAnchor="middle" fill="#77717F" fontFamily="IBM Plex Sans, sans-serif" fontSize="12">{label}</text>)}
               </svg>
             </motion.div> : <motion.div key="monthly-connected" className="absolute inset-0" initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduceMotion ? undefined : { opacity: 0 }} transition={{ duration: reduceMotion ? 0 : 0.3 }}>
-              {selectedTooltip && activeMonth && <div role="tooltip" className="pointer-events-none absolute top-0 z-10 min-w-[190px] -translate-x-1/2 rounded-xl border border-[#E7E1EC] bg-white/95 px-3 py-2 shadow-[0_6px_18px_rgba(24,20,31,.12)] backdrop-blur-sm" style={{ left: selectedTooltip.left }}>
-                <p className="mb-1 text-[11px] font-semibold text-[#292433]">{activeMonth.month} {data.year}</p>
+              {selectedTooltip && activePeriod && <div role="tooltip" className="pointer-events-none absolute top-0 z-10 min-w-[190px] -translate-x-1/2 rounded-xl border border-[#E7E1EC] bg-white/95 px-3 py-2 shadow-[0_6px_18px_rgba(24,20,31,.12)] backdrop-blur-sm" style={{ left: selectedTooltip.left }}>
+                <p className="mb-1 text-[11px] font-semibold text-[#292433]">Period {activePeriod.period} · {activePeriod.month}, {data.year}</p>
                 {displayedSeries.map((series) => <p key={series.id} className="text-[10px] text-[#625B6B]">{series.label}<span className="float-right font-data font-medium text-[#19171D]">{formatEmission(series.values[activeIndex!])} tCO₂e</span></p>)}
                 <p className="mt-0.5 border-t border-[#EEE9F1] pt-0.5 text-[10px] font-medium text-[#302744]">Total<span className="float-right font-data">{formatEmission(values[activeIndex!])} tCO₂e</span></p>
-                <p className="mt-1 text-[9px] text-[#77717F]">Source: monthly emissions ledger</p>
+                <p className="mt-1 text-[9px] text-[#77717F]">Monthly ledger · prorated by days</p>
               </div>}
               <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="h-full w-full overflow-visible" role="group" aria-label={`Monthly connected stacked scope emissions for ${data.year}`}>
                 {[0, 0.5, 1].map((ratio) => {
@@ -248,10 +306,10 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
                   const path = `M ${upperPoints.map(([x, y]) => `${x} ${y}`).join(' L ')} L ${lowerPoints.map(([x, y]) => `${x} ${y}`).join(' L ')} Z`;
                   return <path key={`area-${band.id}`} d={path} fill={band.color} fillOpacity=".1" stroke={band.color} strokeOpacity=".18" strokeWidth="1" />;
                 })}
-                {months.map((month, index) => {
+                {periods.map((period, index) => {
                   let cumulative = 0;
                   const dimmed = selectedIndex !== null && selectedIndex !== index;
-                  return <g key={`${month.month}-${index}`} data-month-point tabIndex={0} role="button" aria-pressed={selectedIndex === index} aria-label={`${month.month} ${data.year}: ${displayedSeries.map((series) => `${series.label} ${formatEmission(series.values[index])}`).join(', ')} tCO₂e`} onFocus={() => setHoveredIndex(index)} onBlur={() => setHoveredIndex(null)} onMouseEnter={() => setHoveredIndex(index)} onClick={() => setSelectedIndex(selectedIndex === index ? null : index)} onKeyDown={(event) => onKeyDown(event, index)} className="group cursor-pointer outline-none">
+                  return <g key={`period-${period.period}`} data-month-point tabIndex={0} role="button" aria-pressed={selectedIndex === index} aria-label={`Period ${period.period}, ${period.month} ${data.year}: ${displayedSeries.map((series) => `${series.label} ${formatEmission(series.values[index])}`).join(', ')} tCO₂e`} onFocus={() => setHoveredIndex(index)} onBlur={() => setHoveredIndex(null)} onMouseEnter={() => setHoveredIndex(index)} onClick={() => setSelectedIndex(selectedIndex === index ? null : index)} onKeyDown={(event) => onKeyDown(event, index)} className="group cursor-pointer outline-none">
                     {displayedSeries.map((series, seriesIndex) => {
                       const value = series.values[index];
                       const connectedBottom = baseline + plotHalfHeight;
@@ -262,9 +320,9 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
                       return <motion.rect key={series.id} x={xFor(index) - Math.min(22, cellWidth * 0.27)} width={Math.min(44, cellWidth * 0.54)} rx="4" fill={series.color} initial={false} animate={{ y: chartInView ? y : baseline, height: chartInView ? height : 0, opacity: selectedIndex !== null && dimmed ? 0.5 : 1 }} transition={{ y: { duration: reduceMotion ? 0 : playEntrance ? 0.6 : 0.3, delay: reduceMotion || !playEntrance ? 0 : index * 0.025 + seriesIndex * 0.006, ease: [0.22, 1, 0.36, 1] }, height: { duration: reduceMotion ? 0 : playEntrance ? 0.6 : 0.3, delay: reduceMotion || !playEntrance ? 0 : index * 0.025 + seriesIndex * 0.006, ease: [0.22, 1, 0.36, 1] }, opacity: { duration: reduceMotion ? 0 : 0.15 } }} />;
                     })}
                     <rect x={xFor(index) - cellWidth / 2} y={plotTop} width={cellWidth} height={chartHeight - plotTop - 32} fill="transparent" />
-                    <text x={xFor(index)} y={chartHeight - 8} textAnchor="middle" fill={activeIndex === index ? '#5625B8' : '#77717F'} fontFamily="IBM Plex Sans, sans-serif" fontSize="12" fontWeight={activeIndex === index ? 500 : 400}>{month.month}</text>
                   </g>;
                 })}
+                {monthAxis.map(({ label, x }) => <text key={label} x={x} y={chartHeight - 8} textAnchor="middle" fill="#77717F" fontFamily="IBM Plex Sans, sans-serif" fontSize="12">{label}</text>)}
               </svg>
             </motion.div>}
           </AnimatePresence>
@@ -277,7 +335,7 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
               <span className="inline-flex items-center gap-1.5 text-[#615A68]"><i className="h-2.5 w-2.5 rounded-full bg-[#6945D9]" />Decrease</span>
             </> : displayedSeries.map((series) => <span key={series.id} className="inline-flex items-center gap-1.5 text-[#615A68]"><i className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: series.color }} />{series.label}</span>)}
           </div>
-          <span className="text-[#77717F]">Source: monthly emissions ledger</span>
+          <span className="text-[#77717F]">Estimated from monthly ledger</span>
         </footer>
       </div>
     </section>
