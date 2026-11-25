@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   FileText,
   ChevronDown,
@@ -38,6 +39,7 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
   onOpenSimulator,
   notificationsCount
 }) => {
+  const prefersReducedMotion = useReducedMotion();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -104,13 +106,14 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
               setActiveTab('dashboard');
               setOpenDropdown(null);
             }}
-            className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors shrink-0 cursor-pointer ${
+            className={`relative px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors shrink-0 cursor-pointer ${
               activeTab === 'dashboard'
-                ? 'bg-[#5625B8] text-[#FFFFFF] shadow-2xs'
+                ? 'text-[#FFFFFF]'
                 : 'text-[#15131A] hover:bg-[#FFFFFF]/80'
             }`}
           >
-            Dashboard
+            {activeTab === 'dashboard' && <motion.span layoutId="primary-nav-active" transition={{ layout: { duration: prefersReducedMotion ? 0 : 0.2 } }} className="absolute inset-0 rounded-lg bg-[#5625B8] shadow-2xs" />}
+            <span className="relative z-10">Dashboard</span>
           </button>
 
           {/* 2. Organization */}
@@ -119,13 +122,14 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
               setActiveTab('organization');
               setOpenDropdown(null);
             }}
-            className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors shrink-0 cursor-pointer ${
+            className={`relative px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors shrink-0 cursor-pointer ${
               activeTab === 'organization'
-                ? 'bg-[#5625B8] text-[#FFFFFF] shadow-2xs'
+                ? 'text-[#FFFFFF]'
                 : 'text-[#15131A] hover:bg-[#FFFFFF]/80'
             }`}
           >
-            Organization
+            {activeTab === 'organization' && <motion.span layoutId="primary-nav-active" transition={{ layout: { duration: prefersReducedMotion ? 0 : 0.2 } }} className="absolute inset-0 rounded-lg bg-[#5625B8] shadow-2xs" />}
+            <span className="relative z-10">Organization</span>
           </button>
 
           {/* 3. Users */}
@@ -191,13 +195,14 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
               setActiveTab('measure');
               setOpenDropdown(null);
             }}
-            className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors shrink-0 cursor-pointer ${
+            className={`relative px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors shrink-0 cursor-pointer ${
               activeTab === 'measure'
-                ? 'bg-[#5625B8] text-[#FFFFFF] shadow-2xs'
+                ? 'text-[#FFFFFF]'
                 : 'text-[#15131A] hover:bg-[#FFFFFF]/80'
             }`}
           >
-            Measure
+            {activeTab === 'measure' && <motion.span layoutId="primary-nav-active" transition={{ layout: { duration: prefersReducedMotion ? 0 : 0.2 } }} className="absolute inset-0 rounded-lg bg-[#5625B8] shadow-2xs" />}
+            <span className="relative z-10">Measure</span>
           </button>
 
           {/* 5. Analysis */}
@@ -206,13 +211,14 @@ export const FloatingNav: React.FC<FloatingNavProps> = ({
               setActiveTab('analysis');
               setOpenDropdown(null);
             }}
-            className={`px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors shrink-0 cursor-pointer ${
+            className={`relative px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-colors shrink-0 cursor-pointer ${
               activeTab === 'analysis'
-                ? 'bg-[#5625B8] text-[#FFFFFF] shadow-2xs'
+                ? 'text-[#FFFFFF]'
                 : 'text-[#15131A] hover:bg-[#FFFFFF]/80'
             }`}
           >
-            Analysis
+            {activeTab === 'analysis' && <motion.span layoutId="primary-nav-active" transition={{ layout: { duration: prefersReducedMotion ? 0 : 0.2 } }} className="absolute inset-0 rounded-lg bg-[#5625B8] shadow-2xs" />}
+            <span className="relative z-10">Analysis</span>
           </button>
 
           {/* 6. Act */}

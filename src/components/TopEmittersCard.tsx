@@ -19,6 +19,7 @@ export const TopEmittersCard: React.FC<TopEmittersCardProps> = ({
 
   const items = emitterMode === 'facilities' ? data.topFacilities : data.topSources;
   const maxEmissions = Math.max(...items.map((i) => i.emissions));
+  const prioritizedShare = Math.round(items.reduce((sum, item) => sum + item.emissions, 0) / data.totalEmissions * 100);
 
   return (
     <div className="glass-card-top p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between h-full">
@@ -67,12 +68,12 @@ export const TopEmittersCard: React.FC<TopEmittersCardProps> = ({
           return (
             <div
               key={item.id}
-              className="p-3 rounded-xl bg-[#F7F5F2] hover:bg-[#EEEAF5]/60 border border-[#D8D2DF] transition-colors"
+              className="p-3 rounded-xl bg-white/50 hover:bg-white/75 backdrop-blur-sm border border-white/80 transition-colors"
             >
               {/* Top row: Rank + Name on left, numeric emissions on right */}
               <div className="flex items-center justify-between text-[13px] text-[#15131A] mb-1.5">
                 <div className="flex items-center gap-2 truncate pr-2">
-                  <span className="text-[11px] font-data font-semibold text-[#5625B8] bg-[#FFFFFF] px-1.5 py-0.5 rounded-md border border-[#D8D2DF] shrink-0">
+                  <span className="text-[11px] font-data font-semibold text-[#5625B8] bg-white/80 px-1.5 py-0.5 rounded-md border border-white shrink-0">
                     0{idx + 1}
                   </span>
                   <span className="font-medium text-[#15131A] text-[13px] truncate">
@@ -123,7 +124,7 @@ export const TopEmittersCard: React.FC<TopEmittersCardProps> = ({
           Prioritized mitigation levers
         </span>
         <span className="font-data text-[#15131A] font-medium text-[11px]">
-          58% of gross volume
+          {prioritizedShare}% of gross volume
         </span>
       </div>
     </div>

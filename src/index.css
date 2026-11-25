@@ -2,6 +2,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
+  html {
+    background-color: #fce3d2;
+  }
+
   :root {
     /* Typography Families */
     --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -36,6 +40,41 @@
     --accent-primary-hover: #461D98;
     --accent-primary-soft: rgba(86, 37, 184, 0.09);
     --brand-orange: #F46A1F;
+
+    /* Analytics palette and geometry */
+    --chart-violet-50: #F1EDFF;
+    --chart-violet-200: #D9CFFA;
+    --chart-violet-400: #AC96F2;
+    --chart-violet-600: #8062E8;
+    --chart-violet-700: #6248D5;
+    --chart-blue-50: #EDF2FF;
+    --chart-blue-200: #D0DFFF;
+    --chart-blue-400: #A3BDF7;
+    --chart-blue-600: #6B92E7;
+    --chart-blue-700: #4268D4;
+    --chart-teal-50: #EAF8F5;
+    --chart-teal-200: #C4ECE1;
+    --chart-teal-500: #4EB39E;
+    --chart-teal-700: #238C78;
+    --chart-amber-50: #FFF6E8;
+    --chart-amber-200: #F9E2BF;
+    --chart-amber-500: #DDA65C;
+    --chart-rose-50: #FDEEF1;
+    --chart-rose-200: #F5CCD6;
+    --chart-rose-500: #D97891;
+    --chart-inactive: #EDEDF2;
+    --chart-grid: #E7E8ED;
+    --radius-chart: 12px;
+    --card-padding: 20px;
+    --card-gap: 16px;
+    --section-gap: 24px;
+    --chart-dot-radius: 2.4px;
+    --chart-bar-radius: 4px;
+    --motion-fast: 120ms;
+    --motion-normal: 200ms;
+    --motion-chart: 600ms;
+    --motion-stagger: 30ms;
+    --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
 
     /* Emissions Scope Tokens */
     --scope-1: #5625B8;
@@ -89,6 +128,29 @@
     --accent-primary-soft: rgba(139, 99, 230, 0.16);
     --brand-orange: #FF823F;
 
+    --chart-violet-50: rgba(139, 99, 230, 0.16);
+    --chart-violet-200: rgba(139, 99, 230, 0.28);
+    --chart-violet-400: #B6A1F4;
+    --chart-violet-600: #9E7BF0;
+    --chart-violet-700: #8B63E6;
+    --chart-blue-50: rgba(96, 165, 250, 0.14);
+    --chart-blue-200: rgba(96, 165, 250, 0.28);
+    --chart-blue-400: #93C5FD;
+    --chart-blue-600: #60A5FA;
+    --chart-blue-700: #3B82F6;
+    --chart-teal-50: rgba(74, 222, 128, 0.12);
+    --chart-teal-200: rgba(74, 222, 128, 0.24);
+    --chart-teal-500: #4ADE80;
+    --chart-teal-700: #22C55E;
+    --chart-amber-50: rgba(251, 191, 36, 0.12);
+    --chart-amber-200: rgba(251, 191, 36, 0.24);
+    --chart-amber-500: #FBBF24;
+    --chart-rose-50: rgba(248, 113, 113, 0.12);
+    --chart-rose-200: rgba(248, 113, 113, 0.24);
+    --chart-rose-500: #F87171;
+    --chart-inactive: #332C42;
+    --chart-grid: #332C42;
+
     --scope-1: #8B63E6;
     --scope-2: #FF823F;
     --scope-3: #60A5FA;
@@ -117,7 +179,16 @@
   body {
     font-family: var(--font-sans);
     color: var(--text-primary);
-    background-color: var(--bg-canvas);
+    background: linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #ffffff 54%,
+      #fffdfa 70%,
+      #fff5ed 84%,
+      #fce3d2 100%
+    );
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
     min-height: 100vh;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
@@ -131,12 +202,18 @@
   }
 }
 
+.analytics-canvas {
+  background: transparent;
+}
+
 /* Primary Tula Carbon Card Surface (16px radius, crisp #FFFFFF surface, #D8D2DF border) */
 .glass-card-top {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  box-shadow: var(--shadow-card);
+  background-color: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(218, 214, 222, 0.76);
+  box-shadow: 0 1px 2px rgba(21, 19, 26, 0.035), 0 8px 26px rgba(80, 61, 44, 0.045);
   border-radius: var(--radius-lg);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  backdrop-filter: blur(18px) saturate(1.08);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -146,18 +223,29 @@
 }
 
 .glass-panel {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-default);
+  background-color: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(218, 214, 222, 0.72);
   box-shadow: var(--shadow-card);
   border-radius: var(--radius-md);
+  -webkit-backdrop-filter: blur(16px) saturate(1.08);
+  backdrop-filter: blur(16px) saturate(1.08);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .glass-panel-static {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-default);
+  background-color: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(218, 214, 222, 0.72);
   box-shadow: var(--shadow-card);
   border-radius: var(--radius-lg);
+  -webkit-backdrop-filter: blur(16px) saturate(1.08);
+  backdrop-filter: blur(16px) saturate(1.08);
+}
+
+/* Keep nested metric tiles translucent so the warm canvas softly shows through. */
+.glass-card-top .rounded-xl.border,
+.glass-card-top .rounded-lg.border {
+  -webkit-backdrop-filter: blur(12px) saturate(1.06);
+  backdrop-filter: blur(12px) saturate(1.06);
 }
 
 .glass-nav {
@@ -226,4 +314,15 @@
 .animate-ring-pulse {
   animation: ring-subtle-pulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

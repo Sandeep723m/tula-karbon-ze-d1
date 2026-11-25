@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence, type Variants } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion, type Variants } from 'framer-motion';
 import { FloatingNav } from './components/FloatingNav';
 import { TotalEmissionsCard } from './components/TotalEmissionsCard';
 import { EmissionsOffsetCard } from './components/EmissionsOffsetCard';
@@ -15,40 +15,54 @@ import { ReportModal } from './components/ReportModal';
 import { SearchModal } from './components/SearchModal';
 import { OrganizationView } from './components/OrganizationView';
 import { TelemetryView } from './components/TelemetryView';
+import { AnalyticsShowcase } from './components/AnalyticsShowcase';
 import { EMISSIONS_DATA } from './data/emissionsData';
 import { ScopeType, EmitterItem, YearEmissionsData } from './types';
 import { Sparkles, Shield, Leaf, ArrowRight, Download, Calendar, ChevronDown } from 'lucide-react';
 
-// Framer-motion staggered entrance animation variants for luxury feel
+// Short, staggered card entrances keep the dashboard calm and readable.
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.05
+      staggerChildren: 0.11,
+      delayChildren: 0.04
     }
   }
 };
 
-const cardVariants: Variants = {
-  hidden: {
-    opacity: 0,
-    y: 18,
-    scale: 0.985
+const cardEntranceVariants: Variants[] = [
+  {
+    hidden: { opacity: 0, y: 12 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] } }
   },
-  show: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.55,
-      ease: [0.16, 1, 0.3, 1] // Luxury smooth cubic-bezier
-    }
+  {
+    hidden: { opacity: 0, scale: 0.975 },
+    show: { opacity: 1, scale: 1, transition: { duration: 0.38, ease: [0.22, 1, 0.36, 1] } }
+  },
+  {
+    hidden: { opacity: 0, x: -10 },
+    show: { opacity: 1, x: 0, transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] } }
+  },
+  {
+    hidden: { opacity: 0, y: 10, scale: 0.99 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.44, ease: [0.22, 1, 0.36, 1] } }
   }
+];
+
+const reducedContainerVariants: Variants = {
+  hidden: { opacity: 1 },
+  show: { opacity: 1 }
+};
+
+const reducedCardVariants: Variants = {
+  hidden: { opacity: 1, x: 0, y: 0, scale: 1 },
+  show: { opacity: 1, x: 0, y: 0, scale: 1, transition: { duration: 0 } }
 };
 
 export default function App() {
+  const prefersReducedMotion = useReducedMotion();
   const [selectedYear, setSelectedYear] = useState<number>(2023);
   const [selectedOrg, setSelectedOrg] = useState<string>('org-global');
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -135,7 +149,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F5F2] text-[#15131A] relative pb-20 selection:bg-[#5625B8]/15 selection:text-[#5625B8]">
+    <div className="analytics-canvas min-h-screen text-[#15131A] relative pb-6 selection:bg-[#5625B8]/15 selection:text-[#5625B8]">
       {/* Top Navigation */}
       <FloatingNav
         activeTab={activeTab}
@@ -153,9 +167,9 @@ export default function App() {
       {/* Main Content Area (full-width with balanced horizontal paddings on 4px grid) */}
       <main className="w-full px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 space-y-6">
         {/* Tab Router */}
-        {(activeTab === 'dashboard' || activeTab === 'analysis' || activeTab === 'act' || activeTab === 'reduce' || activeTab === 'users') && (
+        {(activeTab === 'dashboard' || activeTab === 'act' || activeTab === 'reduce' || activeTab === 'users') && (
           <motion.div
-            variants={containerVariants}
+            variants={prefersReducedMotion ? reducedContainerVariants : containerVariants}
             initial="hidden"
             animate="show"
             className="space-y-6"
@@ -235,7 +249,7 @@ export default function App() {
 
             {/* Top Row: 60% Total Emissions Card + 40% Project Status Card */}
             <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 items-stretch">
-              <motion.div variants={cardVariants} className="lg:col-span-6 flex flex-col">
+              <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[0]} className="lg:col-span-6 flex flex-col">
                 <TotalEmissionsCard
                   data={currentData}
                   activeScope={activeScope}
@@ -244,7 +258,7 @@ export default function App() {
                 />
               </motion.div>
 
-              <motion.div variants={cardVariants} className="lg:col-span-4 flex flex-col">
+              <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[1]} className="lg:col-span-4 flex flex-col">
                 <EmissionsOffsetCard
                   data={currentData}
                 />
@@ -253,11 +267,11 @@ export default function App() {
 
             {/* Bottom Row: 60% Monthly Emissions Card + 40% Top 5 Emitters Card */}
             <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 items-stretch">
-              <motion.div variants={cardVariants} className="lg:col-span-6 flex flex-col">
+              <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[2]} className="lg:col-span-6 flex flex-col">
                 <MonthlyTimelineCard data={currentData} />
               </motion.div>
 
-              <motion.div variants={cardVariants} className="lg:col-span-4 flex flex-col">
+              <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[3]} className="lg:col-span-4 flex flex-col">
                 <TopEmittersCard
                   data={currentData}
                 />
@@ -275,6 +289,8 @@ export default function App() {
         {activeTab === 'measure' && (
           <TelemetryView data={currentData} />
         )}
+
+        {activeTab === 'analysis' && <AnalyticsShowcase data={currentData} />}
       </main>
 
       {/* Global Interactive Modals */}
