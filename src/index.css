@@ -179,14 +179,16 @@
   body {
     font-family: var(--font-sans);
     color: var(--text-primary);
-    background: linear-gradient(
-      180deg,
-      #ffffff 0%,
-      #ffffff 54%,
-      #fffdfa 70%,
-      #fff5ed 84%,
-      #fce3d2 100%
-    );
+    background:
+      radial-gradient(ellipse 92% 40% at 50% 0%, rgba(223, 211, 250, 0.44) 0%, rgba(241, 236, 252, 0.24) 42%, rgba(255, 255, 255, 0) 100%),
+      linear-gradient(
+        180deg,
+        #ffffff 0%,
+        #ffffff 54%,
+        #fffdfa 70%,
+        #fff5ed 84%,
+        #fce3d2 100%
+      );
     background-repeat: no-repeat;
     background-size: 100% 100%;
     min-height: 100vh;

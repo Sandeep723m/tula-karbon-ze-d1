@@ -1,211 +1,258 @@
-import React, { useState } from 'react';
-import { YearEmissionsData } from '../types';
+import React, { useRef, useState } from 'react';
+import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Layers } from 'lucide-react';
+import { YearEmissionsData } from '../types';
 
 interface EmissionsOffsetCardProps {
   data: YearEmissionsData;
   onOpenOffsetModal?: () => void;
 }
 
-const arcPath = (cx: number, cy: number, radius: number, startAngle: number, endAngle: number) => {
-  const startX = cx + radius * Math.cos(startAngle);
-  const startY = cy + radius * Math.sin(startAngle);
-  const endX = cx + radius * Math.cos(endAngle);
-  const endY = cy + radius * Math.sin(endAngle);
-  const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
-  return `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY}`;
-};
+type ProjectStatusId = 'in-progress' | 'completed' | 'in-review' | 'on-hold';
+type ViewMode = 'count' | 'tonnage';
 
-export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({
-  data
-}) => {
-  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'count' | 'tonnage'>('count');
+interface ProjectStatusDatum {
+  id: ProjectStatusId;
+  name: string;
+  count: number;
+  tonnage: number;
+  color: string;
+}
 
-  // 4 differentiated warm/brand orange-amber & neutral tones harmonized with Tula Carbon
-  const projectStatusData = [
-    {
-      id: 'in-progress',
-      name: 'In Progress',
-      count: 23,
-      tonnage: 21400,
-      color: '#F46A1F', // Brand Deep Orange
-      description: 'Active forestry, direct air capture & renewable displacement projects currently retiring credits.'
-    },
-    {
-      id: 'completed',
-      name: 'Completed',
-      count: 13,
-      tonnage: 11200,
-      color: '#F5C400'
-    },
-    {
-      id: 'in-review',
-      name: 'In Review',
-      count: 3,
-      tonnage: 3100,
-      color: '#A855F7'
-    },
-    {
-      id: 'on-hold',
-      name: 'On Hold',
-      count: 3,
-      tonnage: 1800,
-      color: '#A9A7B2'
-    }
-  ];
+// Existing dashboard fixture; percentages and capsule counts are derived from these status totals.
+const projectStatusData: ProjectStatusDatum[] = [
+  { id: 'in-progress', name: 'In Progress', count: 23, tonnage: 21400, color: '#FF7925' },
+  { id: 'completed', name: 'Completed', count: 13, tonnage: 11200, color: '#F5C728' },
+  { id: 'in-review', name: 'In Review', count: 3, tonnage: 3100, color: '#A45CE9' },
+  { id: 'on-hold', name: 'On Hold', count: 3, tonnage: 1800, color: '#A7A8B8' }
+];
 
-  const totalProjects = projectStatusData.reduce((acc, curr) => acc + curr.count, 0);
+const MAX_SEGMENTS = 56;
+const CENTER_X = 200;
+const CENTER_Y = 195;
+const INNER_RADIUS = 122;
+const OUTER_RADIUS = 148;
+const SEGMENT_STROKE = 7.5;
+
+function allocateSegmentCounts(data: ProjectStatusDatum[], totalProjects: number) {
+  if (totalProjects <= MAX_SEGMENTS) return data.map((status) => status.count);
+
+  const exact = data.map((status) => (status.count / totalProjects) * MAX_SEGMENTS);
+  const allocated = exact.map(Math.floor);
+  const remaining = MAX_SEGMENTS - allocated.reduce((sum, count) => sum + count, 0);
+  const priority = exact
+    .map((count, index) => ({ index, remainder: count - allocated[index] }))
+    .sort((a, b) => b.remainder - a.remainder);
+  for (let index = 0; index < remaining; index += 1) allocated[priority[index].index] += 1;
+  return allocated;
+}
+
+export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }) => {
+  const [hoveredCategory, setHoveredCategory] = useState<ProjectStatusId | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<ProjectStatusId | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('count');
+  const [focusIndex, setFocusIndex] = useState(0);
+  const reduceMotion = useReducedMotion();
+  const gaugeRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(gaugeRef, { once: true, amount: 0.25 });
+
+  const totalProjects = projectStatusData.reduce((sum, status) => sum + Math.max(0, status.count), 0);
+  const segmentCount = Math.min(totalProjects, MAX_SEGMENTS);
+  const allocatedCounts = allocateSegmentCounts(projectStatusData, totalProjects);
+  const segments = projectStatusData.flatMap((status, statusIndex) =>
+    Array.from({ length: allocatedCounts[statusIndex] }, (_, projectIndex) => ({
+      ...status,
+      projectIndex: projectIndex + 1,
+      share: totalProjects ? (status.count / totalProjects) * 100 : 0
+    }))
+  );
   const totalTonnage = data.totalOffset;
+  const activeId = hoveredCategory ?? selectedCategory;
+  const activeCategory = activeId ? projectStatusData.find((status) => status.id === activeId) ?? null : null;
+  const valueForStatus = (status: ProjectStatusDatum) => viewMode === 'count'
+    ? status.count.toLocaleString()
+    : `${(status.tonnage / 1000).toFixed(1)}k`;
+  const mainValue = activeCategory
+    ? valueForStatus(activeCategory)
+    : viewMode === 'count' ? totalProjects.toLocaleString() : `${(totalTonnage / 1000).toFixed(1)}k`;
+  const mainLabel = activeCategory
+    ? activeCategory.name
+    : viewMode === 'count' ? 'Active Projects' : 'tCO₂e Retired';
 
-  // Segmented half-ring gauge, with each segment sized by project status share.
-  const cx = 130;
-  const cy = 126;
-  const r = 87;
-  const strokeWidth = 42;
-  const totalArcLength = Math.PI * r;
+  const handleSegmentKeyDown = (event: React.KeyboardEvent<SVGLineElement>, index: number) => {
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      if (!segments.length) return;
+      const nextIndex = (index + (event.key === 'ArrowRight' ? 1 : -1) + segments.length) % segments.length;
+      setFocusIndex(nextIndex);
+      event.currentTarget.ownerSVGElement?.querySelectorAll<SVGLineElement>('[data-project-segment]')[nextIndex]?.focus();
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      const statusId = segments[index].id;
+      setSelectedCategory((current) => current === statusId ? null : statusId);
+    }
+    if (event.key === 'Escape') {
+      setHoveredCategory(null);
+      setSelectedCategory(null);
+    }
+  };
 
-  const gapSize = 8;
-  const totalGaps = gapSize * (projectStatusData.length - 1);
-  const usableArcLength = totalArcLength - totalGaps;
-
-  const segmentLengths = projectStatusData.map((item) => {
-    return (item.count / totalProjects) * usableArcLength;
-  });
-  const activeCategory = hoveredCategory
-    ? projectStatusData.find((p) => p.id === hoveredCategory)
-    : null;
+  const setHovered = (statusId: ProjectStatusId | null) => setHoveredCategory(statusId);
+  const toggleSelected = (statusId: ProjectStatusId) => setSelectedCategory((current) => current === statusId ? null : statusId);
 
   return (
-    <div className="glass-card-top p-5 sm:p-6 relative overflow-hidden flex flex-col h-full">
-      {/* 1. Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-[#D8D2DF]">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-[20px] font-semibold text-[#15131A] tracking-tight leading-snug">
-              Project Status
-            </h2>
-            <span className="text-[11px] font-medium text-[#15803D] bg-[#ECFDF3] border border-[#BBF7D0] px-2 py-0.5 rounded-md">
-              Approved
-            </span>
-          </div>
-          <p className="text-[13px] text-[#667085] font-normal mt-0.5">
-            Carbon offset &amp; removal portfolio
-          </p>
+    <section
+      className="glass-card-top relative flex h-full flex-col overflow-hidden rounded-[20px] bg-white/80 p-5 sm:p-6"
+      style={{ backdropFilter: 'blur(24px) saturate(1.08)', WebkitBackdropFilter: 'blur(24px) saturate(1.08)' }}
+      aria-labelledby="project-status-title"
+    >
+      <header className="flex items-center gap-3 border-b border-[#E7E5ED] pb-4">
+        <div aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#F2EAFE] text-[#7541DD]">
+          <Layers className="h-6 w-6" strokeWidth={2} />
         </div>
-      </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+            <h2 id="project-status-title" className="text-[19px] font-semibold leading-tight tracking-tight text-[#181624]">Project Status</h2>
+            <span className="rounded-full border border-[#B7F0C8] bg-[#E9FBEF] px-2.5 py-1 text-[11px] font-semibold leading-none text-[#15803D]">Approved</span>
+          </div>
+          <p className="mt-1 text-[12px] font-normal text-[#777384]">Carbon offset &amp; removal portfolio</p>
+        </div>
+      </header>
 
-      {/* 2. Center: Segmented Radial Gauge */}
-      <div className="relative w-full flex flex-col items-center justify-center flex-1 py-3">
-        <div className="relative w-full max-w-[330px] h-[190px] sm:h-[205px] flex items-center justify-center">
+      <div className="flex flex-1 flex-col items-center justify-center py-3">
+        <div ref={gaugeRef} className="relative w-full max-w-[400px]">
           <svg
-            viewBox="0 0 260 160"
-            className="w-full h-full overflow-visible select-none"
-            role="img"
-            aria-label="Segmented radial gauge showing the distribution of offset project statuses"
+            viewBox="0 0 400 220"
+            className="block h-auto w-full overflow-visible"
+            role="group"
+            aria-label={`Project status gauge with ${segments.length} capsules representing ${totalProjects} projects`}
           >
-            {/* Background guide track */}
-            <path d={arcPath(cx, cy, r, Math.PI, Math.PI * 2)} fill="none" stroke="#F0EDF5" strokeWidth={strokeWidth} strokeLinecap="round" />
-
-            {/* Fine radial ticks echo the gauge scale without adding chart clutter. */}
-            {Array.from({ length: 49 }, (_, index) => {
-              const angle = Math.PI + (index / 48) * Math.PI;
-              const innerRadius = r - 31;
-              const outerRadius = innerRadius + (index % 4 === 0 ? 7 : 4);
-              return <line key={`tick-${index}`} x1={cx + innerRadius * Math.cos(angle)} y1={cy + innerRadius * Math.sin(angle)} x2={cx + outerRadius * Math.cos(angle)} y2={cy + outerRadius * Math.sin(angle)} stroke="#D7CFF0" strokeWidth={index % 4 === 0 ? 1.5 : 1} opacity=".62" />;
+            {segments.map((segment, index) => {
+              const angle = Math.PI + (Math.PI * (index + 0.5)) / Math.max(segmentCount, 1);
+              const x1 = CENTER_X + INNER_RADIUS * Math.cos(angle);
+              const y1 = CENTER_Y + INNER_RADIUS * Math.sin(angle);
+              const x2 = CENTER_X + OUTER_RADIUS * Math.cos(angle);
+              const y2 = CENTER_Y + OUTER_RADIUS * Math.sin(angle);
+              const faded = activeId !== null && activeId !== segment.id;
+              const opacity = faded ? 0.18 : 1;
+              const preciseShare = totalProjects ? (segment.count / totalProjects) * 100 : 0;
+              const statusSegmentCount = allocatedCounts[projectStatusData.findIndex((status) => status.id === segment.id)];
+              const segmentDescription = totalProjects > MAX_SEGMENTS
+                ? `${segment.name}, proportional capsule ${segment.projectIndex} of ${statusSegmentCount}, representing ${segment.count} projects, ${preciseShare.toFixed(2)} percent`
+                : `${segment.name}, project ${segment.projectIndex} of ${segment.count}, ${preciseShare.toFixed(2)} percent`;
+              return (
+                <g key={`${segment.id}-${segment.projectIndex}`}>
+                <title>{segment.name}: {segment.count} of {totalProjects} projects ({preciseShare.toFixed(2)}%)</title>
+                <motion.line
+                  data-project-segment
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke={segment.color}
+                  strokeWidth={SEGMENT_STROKE}
+                  strokeLinecap="round"
+                  role="button"
+                  tabIndex={index === focusIndex ? 0 : -1}
+                  aria-pressed={selectedCategory === segment.id}
+                  aria-label={segmentDescription}
+                  initial={reduceMotion ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: inView ? 1 : 0, opacity: inView ? opacity : 0 }}
+                  transition={{
+                    pathLength: { duration: reduceMotion ? 0 : 0.4, delay: reduceMotion ? 0 : index * 0.015, ease: [0.22, 1, 0.36, 1] },
+                    opacity: { duration: reduceMotion ? 0 : 0.18 }
+                  }}
+                  onMouseEnter={() => setHovered(segment.id)}
+                  onMouseLeave={() => setHovered(null)}
+                  onFocus={() => { setFocusIndex(index); setHovered(segment.id); }}
+                  onBlur={() => setHovered(null)}
+                  onClick={() => toggleSelected(segment.id)}
+                  onKeyDown={(event) => handleSegmentKeyDown(event, index)}
+                  className="cursor-pointer outline-none focus-visible:drop-shadow-[0_0_3px_rgba(117,65,221,.9)]"
+                />
+                </g>
+              );
             })}
 
-            {/* Four isolated colored status segments */}
-            {projectStatusData.map((item, idx) => {
-              const isHovered = hoveredCategory === item.id;
-              const isOtherHovered = hoveredCategory !== null && !isHovered;
-              const distanceBefore = segmentLengths.slice(0, idx).reduce((sum, length) => sum + length + gapSize, 0);
-              const startAngle = Math.PI + distanceBefore / r;
-              const endAngle = startAngle + segmentLengths[idx] / r;
-              const labelAngle = (startAngle + endAngle) / 2;
-              const labelX = cx + r * Math.cos(labelAngle);
-              const labelY = cy + r * Math.sin(labelAngle);
-
+            {projectStatusData.map((status, index) => {
+              const positions = [
+                { x: 10, y: 79, w: 72 },
+                { x: 301, y: 22, w: 72 },
+                { x: 322, y: 78, w: 58 },
+                { x: 329, y: 128, w: 58 }
+              ][index];
+              const share = totalProjects ? (status.count / totalProjects) * 100 : 0;
               return (
-                <g key={item.id} className="cursor-pointer" onMouseEnter={() => setHoveredCategory(item.id)} onMouseLeave={() => setHoveredCategory(null)} style={{ opacity: isOtherHovered ? 0.34 : 1 }}>
-                  <path d={arcPath(cx, cy, r, startAngle, endAngle)} fill="none" stroke={item.color} strokeWidth={isHovered ? strokeWidth + 3 : strokeWidth} strokeLinecap="round" className="transition-all duration-200" />
-                  <text x={labelX} y={labelY} textAnchor="middle" dominantBaseline="central" fill={idx === 0 ? '#FFFFFF' : '#211A35'} fontSize={idx > 1 ? 10 : 11} fontWeight="700" className="pointer-events-none select-none">{Math.round((item.count / totalProjects) * 100)}%</text>
+                <g key={`callout-${status.id}`} aria-label={`${status.name}: ${share.toFixed(2)} percent`}>
+                  <rect x={positions.x} y={positions.y} width={positions.w} height="31" rx="15.5" fill={`${status.color}18`} stroke={`${status.color}55`} strokeWidth="1" />
+                  <text x={positions.x + positions.w / 2} y={positions.y + 20.5} textAnchor="middle" fill={status.id === 'completed' ? '#8E5A00' : status.color} fontFamily="IBM Plex Sans, sans-serif" fontSize="16" fontWeight="600">{Math.round(share)}%</text>
                 </g>
               );
             })}
           </svg>
 
-          {/* Centered Readout */}
-          <div className="absolute inset-x-0 bottom-3 flex flex-col items-center justify-center text-center pointer-events-none">
-            <Layers className="w-4 h-4 text-[#6248D5] mb-1" strokeWidth={1.8} />
-            <span className="text-[32px] sm:text-[36px] font-semibold text-[#15131A] tracking-tight font-data leading-none">
-              {activeCategory
-                ? viewMode === 'count'
-                  ? activeCategory.count
-                  : `${(activeCategory.tonnage / 1000).toFixed(1)}k`
-                : viewMode === 'count'
-                ? totalProjects
-                : `${(totalTonnage / 1000).toFixed(1)}k`}
-            </span>
-            <span className="text-[11px] uppercase font-medium tracking-wider text-[#85808D] mt-1">
-              {activeCategory
-                ? activeCategory.name
-                : viewMode === 'count'
-                ? 'Active Projects'
-                : 'tCO2e Retired'}
-            </span>
+          <div className="pointer-events-none absolute inset-x-0 top-[44%] flex flex-col items-center text-center">
+            <Layers aria-hidden="true" className="mb-1 h-[18px] w-[18px] text-[#7541DD]" strokeWidth={2} />
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={`${activeCategory?.id ?? 'total'}-${mainValue}-${viewMode}`}
+                initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduceMotion ? undefined : { opacity: 0, y: -3 }}
+                transition={{ duration: reduceMotion ? 0 : 0.2 }}
+                className="flex flex-col items-center"
+                aria-live="polite"
+              >
+                <span className="font-data text-[42px] font-semibold leading-none tracking-[-0.04em] text-[#181624] sm:text-[48px]">{mainValue}</span>
+                <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[#777384]">{mainLabel}</span>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* Toggle between Project Count and Carbon Tonnage */}
         <button
-          onClick={() => setViewMode(viewMode === 'count' ? 'tonnage' : 'count')}
-          className="mt-2 text-[12px] text-[#5625B8] hover:text-[#461D98] font-semibold transition-colors flex items-center gap-1.5 cursor-pointer bg-[#F5F0FF]/85 hover:bg-[#EEE7FF] px-4 py-2 rounded-full border border-[#E2D6FF] shadow-[0_2px_8px_rgba(86,37,184,.08)]"
+          type="button"
+          onClick={() => setViewMode((mode) => mode === 'count' ? 'tonnage' : 'count')}
+          aria-label={viewMode === 'count' ? 'View offset tonnage' : 'View project counts'}
+          className="mt-1 inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-[#E0D2FF] bg-[#F6F0FF]/90 px-4 py-2 text-[12px] font-semibold text-[#7541DD] transition-colors hover:bg-[#EFE5FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7541DD]"
         >
-          <span>
-            {viewMode === 'count'
-              ? `Showing ${totalProjects} Projects · View Tonnage`
-              : `Showing ${(totalTonnage / 1000).toFixed(1)}k tCO₂e · View Projects`}
-          </span>
-          <ArrowRight className="w-3.5 h-3.5" />
+          <span className="truncate">{viewMode === 'count' ? `Showing ${totalProjects} Projects · View Tonnage` : `Showing ${(totalTonnage / 1000).toFixed(1)}k tCO₂e · View Projects`}</span>
+          <ArrowRight className="h-4 w-4 shrink-0" />
         </button>
       </div>
 
-      {/* 3. Bottom 2x2 Legend */}
-      <div className="pt-4 border-t border-[#D8D2DF]/80">
+      <div className="border-t border-[#E7E5ED] pt-3.5">
         <div className="grid grid-cols-2 gap-2.5 text-[12px]">
-          {projectStatusData.map((item) => {
-            const isHovered = hoveredCategory === item.id;
-            const share = Math.round((item.count / totalProjects) * 100);
+          {projectStatusData.map((status) => {
+            const isActive = activeId === status.id;
+            const isSelected = selectedCategory === status.id;
+            const share = totalProjects ? (status.count / totalProjects) * 100 : 0;
             return (
               <button
-                key={item.id}
+                key={status.id}
                 type="button"
-                aria-pressed={isHovered}
-                onMouseEnter={() => setHoveredCategory(item.id)}
-                onMouseLeave={() => setHoveredCategory(null)}
-                onFocus={() => setHoveredCategory(item.id)}
-                onBlur={() => setHoveredCategory(null)}
-                onClick={() => setHoveredCategory(isHovered ? null : item.id)}
-                className={`p-2.5 rounded-xl border flex items-center gap-2 cursor-pointer transition-colors text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#5625B8] ${
-                  isHovered
-                    ? 'bg-[#F4F0FF]/90 border-[#D9CCFF]'
-                    : 'bg-white/55 hover:bg-white/85 border-[#E8E3EE]'
-                }`}
+                aria-pressed={isSelected}
+                title={`${status.name}: ${status.count} projects (${share.toFixed(2)}%)`}
+                onMouseEnter={() => setHovered(status.id)}
+                onMouseLeave={() => setHovered(null)}
+                onFocus={() => setHovered(status.id)}
+                onBlur={() => setHovered(null)}
+                onClick={() => toggleSelected(status.id)}
+                className="flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7541DD]"
+                style={{
+                  backgroundColor: isActive ? `${status.color}12` : 'rgba(255,255,255,.48)',
+                  borderColor: isActive ? `${status.color}55` : '#E7E5ED'
+                }}
               >
-                <i aria-hidden="true" className="w-3 h-3 rounded-full shrink-0 shadow-[inset_0_1px_2px_rgba(255,255,255,.65)]" style={{ backgroundColor: item.color }} />
-                <div className="flex items-center justify-between gap-2 min-w-0 flex-1 text-[#15131A]">
-                  <div className="flex items-baseline gap-1 truncate">
-                    <span className="text-[12px] font-medium truncate">{item.name}</span>
-                    <span className="font-semibold text-[11px] text-[#62636D] font-data">({viewMode === 'count' ? item.count : `${(item.tonnage / 1000).toFixed(1)}k`})</span>
-                  </div>
-                  <span className="font-semibold text-[12px] font-data text-[#62636D] shrink-0">{share}%</span>
-                </div>
+                <i aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: status.color }} />
+                <span className="min-w-0 flex-1 truncate font-medium text-[#181624]">{status.name} ({viewMode === 'count' ? status.count : `${(status.tonnage / 1000).toFixed(1)}k`})</span>
+                <span className="shrink-0 font-data font-semibold text-[#777384]">{Math.round(share)}%</span>
               </button>
             );
           })}
         </div>
       </div>
-    </div>
+    </section>
   );
 };
