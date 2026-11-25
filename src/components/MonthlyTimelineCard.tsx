@@ -104,30 +104,29 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
   const rangeLabel = months.length ? `${monthName(firstMonth)} – ${monthName(lastMonth)}` : 'No reporting period';
 
   return (
-    <section className="h-full rounded-[22px] border border-[#E5E4EA] bg-[#F4F5F8] p-2.5 sm:p-4" aria-labelledby="monthly-emissions-title">
-      <div className="glass-card-top flex h-full min-h-[460px] flex-col rounded-[22px] border border-[#E1DFE7] bg-white/90 p-5 sm:min-h-[500px] sm:p-7">
+    <section className="glass-card-top relative flex h-full min-h-[460px] flex-col overflow-hidden p-4 sm:min-h-[500px] sm:p-5" aria-labelledby="monthly-emissions-title">
         <header className="flex items-center justify-between gap-4">
-          <h2 id="monthly-emissions-title" className="text-[18px] font-semibold tracking-tight text-[#24222B] sm:text-[20px]">Monthly emissions</h2>
-          <span className="shrink-0 text-[12px] text-[#777384] sm:text-[14px]">Illustrative data</span>
+          <h2 id="monthly-emissions-title" className="text-[19px] font-semibold leading-snug tracking-tight text-[#15131A] sm:text-[20px]">Monthly emissions</h2>
+          <span className="shrink-0 text-[12px] text-[#667085]">Illustrative data</span>
         </header>
 
-        <div className="mt-7 sm:mt-9">
+        <div className="mt-6 sm:mt-7">
           <div className="flex flex-wrap items-baseline gap-x-2.5">
-            <span className="font-data text-[42px] font-medium leading-none tracking-[-0.045em] text-[#22212A] sm:text-[48px]">{formatEmission(total)}</span>
-            <span className="text-[17px] font-normal text-[#777384] sm:text-[20px]">tCO₂e</span>
+            <span className="font-data text-[32px] font-semibold leading-none tracking-[-0.04em] text-[#16132B] sm:text-[36px]">{formatEmission(total)}</span>
+            <span className="text-[13px] font-medium text-[#667085]">tCO₂e</span>
           </div>
-          <p className="mt-2 text-[14px] text-[#777384] sm:text-[16px]">{rangeLabel}</p>
+          <p className="mt-2 text-[12px] font-normal text-[#667085]">{rangeLabel}</p>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 sm:mt-7">
-          <span className="text-[13px] text-[#777384] sm:text-[14px]">Chart geometry</span>
-          <div role="group" aria-label="Chart geometry" className="inline-flex items-center gap-0.5 rounded-xl bg-[#F1F0F4] p-1">
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 sm:mt-6">
+          <span className="text-[12px] font-medium text-[#667085]">Chart geometry</span>
+          <div role="group" aria-label="Chart geometry" className="inline-flex items-center gap-0.5 rounded-lg border border-[#D8D2DF] bg-[#EEEAF5] p-1">
             {geometries.map((option) => <button
               key={option.id}
               type="button"
               aria-pressed={geometry === option.id}
               onClick={() => setGeometry(option.id)}
-              className={`rounded-lg px-3.5 py-2 text-[13px] font-medium transition-[color,background-color,box-shadow] duration-200 sm:px-4 sm:text-[14px] ${geometry === option.id ? 'bg-white text-[#6841D8] shadow-[0_1px_5px_rgba(25,20,35,.12)]' : 'text-[#676472] hover:text-[#6841D8]'}`}
+              className={`rounded-md px-3.5 py-1.5 text-[12px] font-medium transition-[color,background-color,box-shadow] duration-200 sm:px-4 ${geometry === option.id ? 'bg-[#5625B8] text-white shadow-sm' : 'text-[#625B6B] hover:text-[#15131A]'}`}
             >{option.label}</button>)}
           </div>
         </div>
@@ -166,7 +165,7 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
                 const y = yFor(tick);
                 return <g key={`tick-${tick}`}>
                   <line x1={plotLeft} x2={plotRight} y1={y} y2={y} stroke="#DDD9E6" strokeWidth="1" strokeDasharray="4 6" />
-                  <text x={plotLeft - 12} y={y + 4} textAnchor="end" fill="#9693A0" fontFamily="IBM Plex Sans, sans-serif" fontSize="13">{axisLabel(tick)}</text>
+                  <text x={plotLeft - 12} y={y + 5} textAnchor="end" fill="#667085" fontFamily="IBM Plex Sans, sans-serif" fontSize="15">{axisLabel(tick)}</text>
                 </g>;
               })}
 
@@ -219,18 +218,17 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({ data }
 
                   <rect x={x - cellWidth / 2} y={plotTop} width={cellWidth} height={plotBottom - plotTop + 42} fill="transparent" />
                   {active && <rect x={x - barWidth / 2 - 4} y={Math.max(plotTop, y - 4)} width={barWidth + 8} height={Math.max(height + 8, 16)} rx="12" fill="none" stroke="#6C4ADD" strokeWidth="2" className="pointer-events-none" />}
-                  <text x={x} y={plotBottom + 28} textAnchor="middle" fill={active ? '#6040CE' : '#777384'} fontFamily="IBM Plex Sans, sans-serif" fontSize="13" fontWeight={active ? 500 : 400}>{month.month}</text>
+                  <text x={x} y={plotBottom + 30} textAnchor="middle" fill={active ? '#5625B8' : '#667085'} fontFamily="IBM Plex Sans, sans-serif" fontSize="15" fontWeight={active ? 500 : 400}>{month.month}</text>
                 </g>;
               })}
             </motion.svg>
           </AnimatePresence>
         </div>
 
-        <footer className="mt-2 flex flex-wrap items-center justify-between gap-3 border-t border-[#E8E5EC] pt-3 text-[12px] text-[#777384]">
-          <span className="inline-flex items-center gap-2"><i aria-hidden="true" className="h-3 w-3 rounded-[4px] bg-[#795BE2]" />Total emissions</span>
+        <footer className="mt-2 flex flex-wrap items-center justify-between gap-3 border-t border-[#D8D2DF] pt-3 text-[12px] text-[#667085]">
+          <span className="inline-flex items-center gap-2"><i aria-hidden="true" className="h-3 w-3 rounded-[4px] bg-[#5625B8]" />Total emissions</span>
           <span>{selectedIndex === null ? 'Hover or select a month' : `${months[selectedIndex]?.month} selected · click again to clear`}</span>
         </footer>
-      </div>
     </section>
   );
 };

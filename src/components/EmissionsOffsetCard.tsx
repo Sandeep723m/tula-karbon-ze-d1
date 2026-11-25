@@ -176,17 +176,21 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
             })}
 
             {projectStatusData.map((status, index) => {
-              const positions = [
-                { x: 10, y: 79, w: 72 },
-                { x: 301, y: 22, w: 72 },
-                { x: 322, y: 78, w: 58 },
-                { x: 329, y: 128, w: 58 }
-              ][index];
+              const bubbleWidth = index < 2 ? 72 : 48;
+              const bubbleHeight = 31;
+              const precedingSegments = allocatedCounts.slice(0, index).reduce((sum, count) => sum + count, 0);
+              const statusSegments = allocatedCounts[index] ?? 0;
+              const middleAngle = Math.PI + Math.PI * (precedingSegments + statusSegments / 2) / Math.max(segmentCount, 1);
+              const labelRadius = OUTER_RADIUS + 31;
+              const centerX = CENTER_X + labelRadius * Math.cos(middleAngle);
+              const centerY = CENTER_Y + labelRadius * Math.sin(middleAngle);
+              const x = Math.max(bubbleWidth / 2 + 4, Math.min(400 - bubbleWidth / 2 - 4, centerX));
+              const y = Math.max(bubbleHeight / 2 + 8, Math.min(220 - bubbleHeight / 2 - 8, centerY));
               const share = totalProjects ? (status.count / totalProjects) * 100 : 0;
               return (
                 <g key={`callout-${status.id}`} aria-label={`${status.name}: ${share.toFixed(2)} percent`}>
-                  <rect x={positions.x} y={positions.y} width={positions.w} height="31" rx="15.5" fill={`${status.color}18`} stroke={`${status.color}55`} strokeWidth="1" />
-                  <text x={positions.x + positions.w / 2} y={positions.y + 20.5} textAnchor="middle" fill={status.id === 'completed' ? '#8E5A00' : status.color} fontFamily="IBM Plex Sans, sans-serif" fontSize="16" fontWeight="600">{Math.round(share)}%</text>
+                  <rect x={x - bubbleWidth / 2} y={y - bubbleHeight / 2} width={bubbleWidth} height={bubbleHeight} rx={bubbleHeight / 2} fill={`${status.color}18`} stroke={`${status.color}55`} strokeWidth="1" />
+                  <text x={x} y={y + 5.5} textAnchor="middle" fill={status.id === 'completed' ? '#8E5A00' : status.color} fontFamily="IBM Plex Sans, sans-serif" fontSize="16" fontWeight="600">{Math.round(share)}%</text>
                 </g>
               );
             })}
