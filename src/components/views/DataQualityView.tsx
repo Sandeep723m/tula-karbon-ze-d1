@@ -29,7 +29,7 @@ export const DataQualityView: React.FC<DataQualityViewProps> = ({ data }) => {
     { metric: 'Missing activity records', value: '52', scope: 'Utility & Freight Q4', action: 'Sync ERP', state: 'warning' },
     { metric: 'Missing evidence docs', value: '83', scope: 'Scope 3 Logistics', action: 'Request PDFs', state: 'warning' },
     { metric: 'Validation flags', value: '7', scope: 'Unit mismatch', action: 'Resolve', state: 'warning' },
-    { metric: 'Inventory snapshot', value: `v2.4 · FY ${data.year}`, scope: 'Updated 2h ago', action: 'ISO 14064', state: 'ok' }
+    { metric: 'Inventory snapshot', value: `FY ${data.year}`, scope: 'Illustrative sample', action: 'View', state: 'ok' }
   ];
 
   return (

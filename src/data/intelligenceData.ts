@@ -265,7 +265,7 @@ export const HISTORICAL_INVENTORY = [
 ];
 
 export const WATERFALL_DRIVERS: WaterfallDriver[] = [
-  { id: 'wf-start', label: 'Prior Year', delta: 146000, type: 'start', detail: 'Audited gross footprint' },
+  { id: 'wf-start', label: 'Prior Year', delta: 146000, type: 'start', detail: 'Illustrative gross inventory' },
   { id: 'wf-growth', label: 'Output Growth', delta: 7400, type: 'increase', detail: '+6.8% production volume expansion' },
   { id: 'wf-ppa', label: 'Solar PPA', delta: -5100, type: 'decrease', detail: 'Munich & Hyderabad 65% green tariff shift' },
   { id: 'wf-fleet', label: 'BEV Fleet', delta: -3400, type: 'decrease', detail: '110 commercial diesel vans electrified' },
@@ -290,8 +290,8 @@ export const DECARB_LEVERS: DecarbLever[] = [
 ];
 
 export const NET_ZERO_MILESTONES: NetZeroMilestone[] = [
-  { year: 2020, title: 'Baseline Established', targetTonnes: 180000, status: 'achieved', note: 'SBTi base-year inventory verified' },
-  { year: 2025, title: 'Latest Audited Inventory', targetTonnes: 141600, status: 'latest', note: '21.3% gross reduction vs 2020 baseline' },
+  { year: 2020, title: 'Baseline Established', targetTonnes: 180000, status: 'achieved', note: 'Illustrative base-year inventory' },
+  { year: 2025, title: 'Latest Inventory', targetTonnes: 141600, status: 'latest', note: 'Illustrative reduction vs 2020 baseline' },
   { year: 2030, title: 'Near-Term Milestone', targetTonnes: 90000, status: 'near-term', note: '-50% gross target · Scopes 1, 2 & priority Scope 3' },
   { year: 2035, title: 'Long-Term Milestone', targetTonnes: 45000, status: 'long-term', note: '-75% gross reduction · Deep supplier decarbonisation' },
   { year: 2040, title: 'Net-Zero Threshold', targetTonnes: 18000, status: 'net-zero', note: '-90% gross abatement + eligible permanent removals' }

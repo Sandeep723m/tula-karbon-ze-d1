@@ -180,7 +180,7 @@
     font-family: var(--font-sans);
     color: var(--text-primary);
     background:
-      radial-gradient(ellipse 92% 40% at 50% 0%, rgba(223, 211, 250, 0.44) 0%, rgba(241, 236, 252, 0.24) 42%, rgba(255, 255, 255, 0) 100%),
+      radial-gradient(ellipse 92% 40% at 50% 0%, rgba(255, 225, 202, 0.42) 0%, rgba(255, 241, 229, 0.22) 42%, rgba(255, 255, 255, 0) 100%),
       linear-gradient(
         180deg,
         #ffffff 0%,
@@ -217,11 +217,6 @@
   -webkit-backdrop-filter: blur(18px) saturate(1.08);
   backdrop-filter: blur(18px) saturate(1.08);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.glass-card-top:hover {
-  border-color: #C7BED3;
-  box-shadow: var(--shadow-card-hover);
 }
 
 .glass-panel {
@@ -269,6 +264,13 @@
 }
 
 /* Minimal Scrollbar */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

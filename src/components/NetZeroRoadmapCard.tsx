@@ -1,5 +1,5 @@
-import React from 'react';
-import { ArrowRight, CheckCircle2, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Info } from 'lucide-react';
 import { YearEmissionsData } from '../types';
 import { NetZeroForecastChart, PathwayYearPoint } from './charts/AnalyticsCharts';
 import {
@@ -15,7 +15,6 @@ interface NetZeroRoadmapCardProps {
   setAnnualRate: (rate: number) => void;
   targetYear: number;
   setTargetYear: (year: number) => void;
-  onExploreScenarios: () => void;
 }
 
 export const NetZeroRoadmapCard: React.FC<NetZeroRoadmapCardProps> = ({
@@ -23,9 +22,9 @@ export const NetZeroRoadmapCard: React.FC<NetZeroRoadmapCardProps> = ({
   annualRate,
   setAnnualRate,
   targetYear,
-  setTargetYear,
-  onExploreScenarios
+  setTargetYear
 }) => {
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const baseline = scaleByGross(180000, data.totalEmissions);
   const threshold = Math.round(baseline * 0.1);
   const currentYear = data.year;
@@ -40,8 +39,6 @@ export const NetZeroRoadmapCard: React.FC<NetZeroRoadmapCardProps> = ({
   const projectedAtTarget = projectEmissions(currentEmissions, annualRate, currentYear, targetYear);
   const remainingGap = Math.max(0, projectedAtTarget - threshold);
   const projectedAchievementYear = computeProjectedThresholdYear(currentEmissions, annualRate, currentYear, threshold);
-  const isOnTrack = projectedAchievementYear !== null && projectedAchievementYear <= targetYear;
-  const yearsLate = projectedAchievementYear && projectedAchievementYear > targetYear ? projectedAchievementYear - targetYear : 0;
 
   const reductionRequired = Math.max(1, baseline - threshold);
   const reductionDone = Math.max(0, baseline - currentEmissions);
@@ -77,67 +74,56 @@ export const NetZeroRoadmapCard: React.FC<NetZeroRoadmapCardProps> = ({
 
   return (
     <section
-      className="glass-card-top p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between h-full"
+      className="glass-card-top p-3 sm:p-4 xl:p-3 relative overflow-visible flex flex-col justify-between h-full"
       aria-labelledby="netzero-roadmap-title"
     >
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#E5E0EA]">
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-[#E5E0EA]">
         <div className="flex items-center gap-2 flex-wrap">
-          <h2 id="netzero-roadmap-title" className="text-[19px] font-semibold tracking-tight text-[#15131A]">
+          <h2 id="netzero-roadmap-title" className="text-[17px] xl:text-[16px] font-semibold tracking-tight text-[#15131A]">
             Net-Zero Path
           </h2>
-          <span
-            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${
-              isOnTrack
-                ? 'bg-[#ECFDF3] text-[#15803D] border-[#BBF7D0]'
-                : 'bg-[#FFF3EC] text-[#C2410C] border-[#FDE68A]'
-            }`}
-          >
-            {isOnTrack ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-            {isOnTrack ? 'On Track' : yearsLate > 0 ? `${yearsLate} yrs behind` : 'Off Track'}
-          </span>
         </div>
 
-        <button
-          type="button"
-          onClick={onExploreScenarios}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[#E0D2FF] bg-[#F6F0FF]/90 px-3 py-1.5 text-[11px] font-semibold text-[#5625B8] hover:bg-[#EFE5FF] transition-colors cursor-pointer"
-        >
-          <span>Planner</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Customer-Friendly Visual Status Strip */}
-      <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        <div className="rounded-xl bg-[#F6F3FC]/85 border border-[#E5DDF5] px-3 py-2">
-          <div className="text-[10px] text-[#667085] font-medium">Today ({currentYear})</div>
-          <div className="font-data text-[16px] font-semibold text-[#5625B8] mt-0.5">
-            {formatCompactTonnes(currentEmissions)} <span className="text-[10px] font-normal text-[#85808D]">t</span>
+        <div className="flex items-center gap-1.5">
+          <div className="inline-flex items-center gap-0.5 rounded-lg border border-[#D8D2DF] bg-[#F3F0F6] p-0.5" role="group" aria-label="Choose net-zero target year">
+            {[2030, 2035, 2040, 2050].map((yr) => <button
+              key={yr}
+              type="button"
+              onClick={() => setTargetYear(yr)}
+              aria-pressed={targetYear === yr}
+              className={`rounded-md px-2.5 py-1.5 font-data text-[11px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7541DD] ${targetYear === yr ? 'bg-white text-[#5625B8] shadow-sm' : 'text-[#667085] hover:text-[#15131A]'}`}
+            >{yr}</button>)}
           </div>
-        </div>
-        <div className="rounded-xl bg-[#EAF8F5]/75 border border-[#C4ECE1] px-3 py-2">
-          <div className="text-[10px] text-[#238C78] font-medium">{targetYear} Goal (-90%)</div>
-          <div className="font-data text-[16px] font-semibold text-[#238C78] mt-0.5">
-            {formatCompactTonnes(threshold)} <span className="text-[10px] font-normal">t</span>
-          </div>
-        </div>
-        <div className={`rounded-xl border px-3 py-2 ${remainingGap > 0 ? 'bg-[#FFF5EE]/85 border-[#F9E2BF]' : 'bg-[#ECFDF3]/85 border-[#BBF7D0]'}`}>
-          <div className="text-[10px] text-[#667085] font-medium">{targetYear} Gap</div>
-          <div className={`font-data text-[16px] font-semibold mt-0.5 ${remainingGap > 0 ? 'text-[#C2410C]' : 'text-[#15803D]'}`}>
-            {remainingGap > 0 ? `+${formatCompactTonnes(remainingGap)}` : '0'} <span className="text-[10px] font-normal">t</span>
-          </div>
-        </div>
-        <div className="rounded-xl bg-white/75 border border-[#E5E0EA] px-3 py-2">
-          <div className="text-[10px] text-[#667085] font-medium">Reaches Goal</div>
-          <div className="font-data text-[16px] font-semibold text-[#15131A] mt-0.5">
-            {projectedAchievementYear ?? 'Not Met'}
+          <div className="relative">
+            <button type="button" aria-label="Show net-zero summary" aria-expanded={summaryOpen} onClick={() => setSummaryOpen((open) => !open)}
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${summaryOpen ? 'border-[#5625B8]/40 bg-[#F1EDFF] text-[#5625B8]' : 'border-[#D8D2DF] bg-white/80 text-[#667085] hover:bg-[#F1EDFF] hover:text-[#5625B8]'}`}>
+              <Info className="h-4 w-4" />
+            </button>
+            {summaryOpen && <div className="absolute right-0 top-full z-40 mt-2 grid w-72 grid-cols-2 gap-2 rounded-xl border border-[#D8D2DF] bg-white/95 p-2.5 shadow-[0_12px_30px_rgba(21,19,26,.16)] backdrop-blur-md sm:w-80" aria-label="Net-zero summary metrics">
+              <div className="rounded-lg border border-[#E5DDF5] bg-[#F6F3FC]/85 px-2.5 py-2">
+                <div className="text-[10px] text-[#667085] font-medium">Today ({currentYear})</div>
+                <div className="mt-0.5 font-data text-[15px] font-semibold text-[#5625B8]">{formatCompactTonnes(currentEmissions)} <span className="text-[10px] font-normal text-[#85808D]">t</span></div>
+              </div>
+              <div className="rounded-lg border border-[#C4ECE1] bg-[#EAF8F5]/75 px-2.5 py-2">
+                <div className="text-[10px] text-[#238C78] font-medium">{targetYear} Goal (-90%)</div>
+                <div className="mt-0.5 font-data text-[15px] font-semibold text-[#238C78]">{formatCompactTonnes(threshold)} <span className="text-[10px] font-normal">t</span></div>
+              </div>
+              <div className={`rounded-lg border px-2.5 py-2 ${remainingGap > 0 ? 'bg-[#FFF5EE]/85 border-[#F9E2BF]' : 'bg-[#ECFDF3]/85 border-[#BBF7D0]'}`}>
+                <div className="text-[10px] text-[#667085] font-medium">{targetYear} Gap</div>
+                <div className={`mt-0.5 font-data text-[15px] font-semibold ${remainingGap > 0 ? 'text-[#C2410C]' : 'text-[#15803D]'}`}>{remainingGap > 0 ? `+${formatCompactTonnes(remainingGap)}` : '0'} <span className="text-[10px] font-normal">t</span></div>
+              </div>
+              <div className="rounded-lg border border-[#E5E0EA] bg-white/75 px-2.5 py-2">
+                <div className="text-[10px] text-[#667085] font-medium">Reaches Goal</div>
+                <div className="mt-0.5 font-data text-[15px] font-semibold text-[#15131A]">{projectedAchievementYear ?? 'Not Met'}</div>
+              </div>
+            </div>}
           </div>
         </div>
       </div>
 
       {/* Visual Journey Progress Bar (2020 -> Today -> 2040 Goal) */}
-      <div className="mt-2.5 px-1">
+      <div className="mt-3 px-0.5">
         <div className="flex items-center justify-between text-[10px] font-data text-[#667085] mb-1">
           <span>2020 ({formatCompactTonnes(baseline)})</span>
           <span className="font-semibold text-[#5625B8]">{progressPct}% to Goal</span>
@@ -149,19 +135,18 @@ export const NetZeroRoadmapCard: React.FC<NetZeroRoadmapCardProps> = ({
       </div>
 
       {/* Visual Gap-Shaded Pathway Chart */}
-      <div className="my-1.5">
+      <div className="my-3">
         <NetZeroForecastChart
           points={points}
           thresholdTonnes={threshold}
           targetYear={targetYear}
-          compact
         />
       </div>
 
       {/* Intuitive Pace Controls + 1-Click Presets */}
-      <div className="pt-2.5 border-t border-[#E5E0EA] space-y-2 text-[11px]">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 flex-1 min-w-[200px]">
+      <div className="pt-2.5 border-t border-[#E5E0EA] space-y-2 text-[10px]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <span className="text-[#667085] font-medium whitespace-nowrap">Cut Pace</span>
             <input
               type="range"
@@ -200,27 +185,13 @@ export const NetZeroRoadmapCard: React.FC<NetZeroRoadmapCardProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-start gap-2">
           <div className="flex items-center gap-3 text-[10px] text-[#667085]">
             <span className="inline-flex items-center gap-1.5"><i className="w-3 h-1 rounded-full bg-[#5625B8] inline-block" />Measured</span>
             <span className="inline-flex items-center gap-1.5"><i className="w-3 h-1 rounded-full bg-[#F46A1F] inline-block" />Current Pace</span>
             <span className="inline-flex items-center gap-1.5"><i className="w-3 h-1 rounded-full bg-[#238C78] inline-block" />Goal Path</span>
           </div>
 
-          <div className="inline-flex items-center rounded-lg border border-[#D8D2DF] bg-[#EEEAF5] p-0.5" role="group" aria-label="Target year">
-            {[2035, 2040, 2050].map((yr) => (
-              <button
-                key={yr}
-                type="button"
-                onClick={() => setTargetYear(yr)}
-                className={`px-2 py-0.5 rounded-md font-data text-[10px] font-medium transition-colors cursor-pointer ${
-                  targetYear === yr ? 'bg-[#5625B8] text-white' : 'text-[#667085] hover:text-[#15131A]'
-                }`}
-              >
-                {yr}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     </section>

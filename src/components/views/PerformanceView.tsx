@@ -20,7 +20,7 @@ export const PerformanceView: React.FC<PerformanceViewProps> = ({ data }) => {
     label: String(h.year),
     value: scaleByGross(h.gross, data.totalEmissions),
     unit: 'tCO₂e',
-    source: 'Verified ledger',
+    source: 'Illustrative inventory',
     comparison:
       idx === 0
         ? '2020 Baseline'

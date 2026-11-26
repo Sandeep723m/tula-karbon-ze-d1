@@ -41,12 +41,8 @@ export const LiveEmissionsCard: React.FC<LiveEmissionsCardProps> = ({ data, glob
       <div className="flex items-center justify-between gap-2 pb-3 border-b border-[#E5E0EA] min-h-[44px]">
         <div className="flex items-center gap-2 min-w-0">
           <h2 id="live-emissions-title" className="text-[17px] font-semibold tracking-tight text-[#15131A] whitespace-nowrap">
-            Live Emissions
+            Hourly Emissions Profile
           </h2>
-          <span className="inline-flex items-center gap-1 rounded-full border border-[#BBF7D0] bg-[#ECFDF3] px-2 py-0.5 text-[10px] font-semibold text-[#15803D] whitespace-nowrap shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#15803D]" />
-            {live.activeNodes} Nodes
-          </span>
         </div>
 
         {/* Organization & Sub-level Filter Button */}
@@ -110,19 +106,19 @@ export const LiveEmissionsCard: React.FC<LiveEmissionsCardProps> = ({ data, glob
         <div>
           <div className="flex items-center justify-between text-[11px] mb-2">
             <span className="font-medium text-[#667085] truncate">{activeOrg.name}</span>
-            <span className="font-data text-[10px] text-[#15803D] font-semibold shrink-0">Peak {live.peakHour}</span>
+            <span className="font-data text-[10px] text-[#667085] font-semibold shrink-0">Peak {live.peakHour}</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2.5">
             <div className="rounded-xl border border-[#E5E0EA] bg-white/75 px-3 py-2.5">
-              <div className="text-[10px] text-[#667085] font-medium">Current Rate</div>
+              <div className="text-[10px] text-[#667085] font-medium">Rate at 17:00</div>
               <div className="font-data text-[22px] font-semibold text-[#15131A] leading-tight mt-0.5">
                 {live.currentRate.toFixed(1)}
                 <span className="ml-1 text-[10px] font-sans font-normal text-[#85808D]">t/hr</span>
               </div>
             </div>
             <div className="rounded-xl border border-[#E5E0EA] bg-white/75 px-3 py-2.5">
-              <div className="text-[10px] text-[#667085] font-medium">Today (00–17h)</div>
+              <div className="text-[10px] text-[#667085] font-medium">Profile total · 00–17h</div>
               <div className="font-data text-[22px] font-semibold text-[#5625B8] leading-tight mt-0.5">
                 {live.todayTotal.toLocaleString()}
                 <span className="ml-1 text-[10px] font-sans font-normal text-[#85808D]">t</span>
@@ -148,7 +144,7 @@ export const LiveEmissionsCard: React.FC<LiveEmissionsCardProps> = ({ data, glob
             </div>
           )}
 
-          <svg viewBox="0 0 240 82" className="w-full h-[112px] overflow-visible" role="group" aria-label="24-hour live emissions telemetry">
+          <svg viewBox="0 0 240 96" className="w-full h-[132px] overflow-visible" role="group" aria-label="Illustrative 24-hour emissions profile">
             <defs>
               <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#5625B8" />
@@ -156,9 +152,9 @@ export const LiveEmissionsCard: React.FC<LiveEmissionsCardProps> = ({ data, glob
               </linearGradient>
             </defs>
             {live.points.map((pt, idx) => {
-              const h = Math.max(4, (pt.ratePerHour / maxRate) * 64);
-              const x = idx * 10 + 1.5;
-              const y = 66 - h;
+              const h = Math.max(4, (pt.ratePerHour / maxRate) * 70);
+              const x = idx * 10 + 0.75;
+              const y = 76 - h;
               const isFuture = idx > currentHourIdx;
               const isNow = idx === currentHourIdx;
               const isHover = hoveredHourIdx === idx;
@@ -174,20 +170,20 @@ export const LiveEmissionsCard: React.FC<LiveEmissionsCardProps> = ({ data, glob
                   <rect
                     x={x}
                     y={y}
-                    width="7"
+                    width="8.5"
                     height={h}
-                    rx="3.5"
+                    rx="4.25"
                     fill={isNow ? '#15803D' : isFuture ? '#E5E0EA' : `url(#${gradId})`}
                     opacity={hoveredHourIdx !== null && !isHover ? 0.45 : isFuture ? 0.65 : 1}
                   />
-                  <rect x={idx * 10} y="0" width="10" height="82" fill="transparent" />
+                  <rect x={idx * 10} y="0" width="10" height="96" fill="transparent" />
                 </g>
               );
             })}
-            <text x="2" y="80" fill="#85808D" fontSize="8" fontFamily="IBM Plex Mono, monospace">00:00</text>
-            <text x="115" y="80" fill="#85808D" fontSize="8" fontFamily="IBM Plex Mono, monospace">12:00</text>
-            <text x="172" y="80" fill="#15803D" fontSize="8" fontWeight="600" fontFamily="IBM Plex Mono, monospace">17:00</text>
-            <text x="214" y="80" fill="#85808D" fontSize="8" fontFamily="IBM Plex Mono, monospace">23:00</text>
+            <text x="2" y="94" fill="#85808D" fontSize="8" fontFamily="IBM Plex Mono, monospace">00:00</text>
+            <text x="115" y="94" fill="#85808D" fontSize="8" fontFamily="IBM Plex Mono, monospace">12:00</text>
+            <text x="172" y="94" fill="#15803D" fontSize="8" fontWeight="600" fontFamily="IBM Plex Mono, monospace">17:00</text>
+            <text x="214" y="94" fill="#85808D" fontSize="8" fontFamily="IBM Plex Mono, monospace">23:00</text>
           </svg>
         </div>
       </div>

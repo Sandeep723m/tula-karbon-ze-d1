@@ -16,9 +16,11 @@ interface MonthlyTimelineCardProps {
   scope2Method?: Scope2Method;
 }
 
-type Geometry = 'solid' | 'stripes' | 'compare';
+type Geometry = 'solid' | 'stripes' | 'compare' | 'trend';
+type PeriodWindow = 'six-months' | 'full-year';
 
 const geometries: { id: Geometry; label: string }[] = [
+  { id: 'trend', label: 'Trend' },
   { id: 'solid', label: 'Solid' },
   { id: 'stripes', label: 'Stripes' },
   { id: 'compare', label: 'Compare' }
@@ -51,6 +53,7 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({
 }) => {
   const [geometry, setGeometry] = useState<Geometry>('solid');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [periodWindow, setPeriodWindow] = useState<PeriodWindow>('six-months');
 
   // Card-level universal query overrides (synced initially with global, overrideable independently)
   const [localYear, setLocalYear] = useState<number | null>(null);
@@ -80,7 +83,8 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({
     (localScope !== null ? 1 : 0) +
     (localGranularity !== null ? 1 : 0) +
     (localOrgId !== null ? 1 : 0) +
-    (localS2Method !== null ? 1 : 0);
+    (localS2Method !== null ? 1 : 0) +
+    (periodWindow !== 'six-months' ? 1 : 0);
 
   const resetLocalFilters = () => {
     setLocalYear(null);
@@ -88,6 +92,7 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({
     setLocalGranularity(null);
     setLocalOrgId(null);
     setLocalS2Method(null);
+    setPeriodWindow('six-months');
     setCompareYear(data.year === 2022 ? 2023 : data.year - 1);
   };
 
@@ -131,8 +136,10 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({
     });
   };
 
-  const periods = useMemo(() => aggregatePeriods(primaryRecord.monthly), [primaryRecord.monthly, effectiveGranularity]);
-  const comparePeriods = useMemo(() => aggregatePeriods(compareRecord.monthly), [compareRecord.monthly, effectiveGranularity]);
+  const allPeriods = useMemo(() => aggregatePeriods(primaryRecord.monthly), [primaryRecord.monthly, effectiveGranularity]);
+  const allComparePeriods = useMemo(() => aggregatePeriods(compareRecord.monthly), [compareRecord.monthly, effectiveGranularity]);
+  const periods = useMemo(() => effectiveGranularity === 'monthly' && periodWindow === 'six-months' ? allPeriods.slice(-6) : allPeriods, [allPeriods, effectiveGranularity, periodWindow]);
+  const comparePeriods = useMemo(() => effectiveGranularity === 'monthly' && periodWindow === 'six-months' ? allComparePeriods.slice(-6) : allComparePeriods, [allComparePeriods, effectiveGranularity, periodWindow]);
 
   const pickValue = (m: MonthlyEmissions) =>
     effectiveScope === 'scope1' ? m.scope1 : effectiveScope === 'scope2' ? m.scope2 : effectiveScope === 'scope3' ? m.scope3 : m.total;
@@ -162,6 +169,17 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({
   const xFor = (index: number) => plotLeft + (index + 0.5) * cellWidth;
   const yFor = (value: number) => plotBottom - (value / maxAxis) * plotHeight;
   const ticks = Array.from({ length: 5 }, (_, index) => maxAxis * (1 - index / 4));
+  const trendPoints = periods.map((period, index) => ({ x: xFor(index), y: yFor(values[index]), period }));
+  const trendLine = trendPoints.length
+    ? `M ${trendPoints[0].x} ${trendPoints[0].y}` + trendPoints.slice(1).map((point, index) => {
+        const previous = trendPoints[index];
+        const middleX = (previous.x + point.x) / 2;
+        return ` C ${middleX} ${previous.y}, ${middleX} ${point.y}, ${point.x} ${point.y}`;
+      }).join('')
+    : '';
+  const trendArea = trendPoints.length
+    ? `${trendLine} L ${trendPoints[trendPoints.length - 1].x} ${plotBottom} L ${trendPoints[0].x} ${plotBottom} Z`
+    : '';
 
   const activeTooltip =
     activeIndex !== null && activeMonth
@@ -223,30 +241,27 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({
 
   const orgName = ORG_HIERARCHY.find((o) => o.id === effectiveOrgId)?.name ?? 'Global';
 
+  useEffect(() => {
+    setCompareYear(data.year === 2022 ? 2023 : data.year - 1);
+  }, [data.year]);
+
+  useEffect(() => {
+    setHoveredIndex(null);
+    setSelectedIndex(null);
+    setFocusIndex(0);
+  }, [periodWindow, effectiveYear, effectiveScope, effectiveGranularity, effectiveOrgId, effectiveS2Method]);
+
   return (
-    <section className="glass-card-top relative flex h-full flex-col overflow-visible p-4 sm:p-5" aria-labelledby="monthly-emissions-title">
-      <header className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#E5E0EA]">
-        <div className="flex items-center gap-2 flex-wrap">
-          <h2 id="monthly-emissions-title" className="text-[19px] font-semibold leading-snug tracking-tight text-[#15131A]">
-            {effectiveGranularity === 'quarterly' ? 'Quarterly' : 'Monthly'} Emissions
+    <section className="glass-card-top relative flex h-full flex-col overflow-visible p-3 sm:p-4 xl:p-3" aria-labelledby="monthly-emissions-title">
+      <header className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2 id="monthly-emissions-title" className="text-[17px] xl:text-[16px] font-semibold leading-snug tracking-tight text-[#15131A]">
+            {geometry === 'trend' ? 'Emissions trend' : `${effectiveGranularity === 'quarterly' ? 'Quarterly' : 'Monthly'} emissions`}
           </h2>
-          <span className="font-data text-[11px] font-medium text-[#5625B8] bg-[#F1EDFF] px-2 py-0.5 rounded-full">
-            FY {effectiveYear} vs {compareYear}
-          </span>
-          <span className={`font-data text-[10px] font-semibold px-2 py-0.5 rounded-full border ${getDeltaBadgeClass(customDeltaPct)}`}>
-            {formatSignedPct(customDeltaPct)}
-          </span>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-data text-[24px] font-semibold leading-none tracking-[-0.03em] text-[#16132B]">
-              {formatEmission(total)}
-            </span>
-            <span className="text-[11px] font-medium text-[#667085]">tCO₂e</span>
-          </div>
-
-          {/* Universal Query Filter Button */}
+        <div className="flex items-center gap-2">
+          {/* Card-level query filters */}
           <div className="relative">
             <button
               type="button"
@@ -290,6 +305,22 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({
                       </button>
                     </div>
                   </div>
+
+                  {effectiveGranularity === 'monthly' && <div>
+                    <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-[#85808D]">Timeline</label>
+                    <div className="inline-flex items-center rounded-lg border border-[#D8D2DF] bg-[#F3F0F6] p-0.5" role="group" aria-label="Timeline period">
+                      {([
+                        { value: 'six-months', label: 'Last 6 months' },
+                        { value: 'full-year', label: 'Full year' }
+                      ] as { value: PeriodWindow; label: string }[]).map((option) => <button
+                        key={option.value}
+                        type="button"
+                        aria-pressed={periodWindow === option.value}
+                        onClick={() => setPeriodWindow(option.value)}
+                        className={`rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${periodWindow === option.value ? 'bg-white text-[#5625B8] shadow-sm' : 'text-[#667085] hover:text-[#15131A]'}`}
+                      >{option.label}</button>)}
+                    </div>
+                  </div>}
 
                   {/* Custom Years Comparison */}
                   <div className="grid grid-cols-2 gap-2">
@@ -417,35 +448,36 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({
         </div>
       </header>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-        <div role="group" aria-label="Chart geometry" className="inline-flex items-center gap-0.5 rounded-lg border border-[#D8D2DF] bg-[#EEEAF5] p-0.5">
+      <div className="mt-2.5 flex flex-wrap items-end justify-between gap-2 border-b border-[#E5E0EA] pb-2.5">
+        <div>
+          <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+            <span className="font-data text-[28px] xl:text-[26px] font-semibold leading-none tracking-[-0.04em] text-[#15131A]">{formatEmission(total)}</span>
+            <span className="text-[13px] font-medium text-[#667085]">tCO₂e</span>
+            <span className={`ml-1 rounded-full border px-2 py-0.5 font-data text-[10px] font-semibold ${getDeltaBadgeClass(customDeltaPct)}`}>{formatSignedPct(customDeltaPct)} vs FY {compareYear}</span>
+          </div>
+          <p className="mt-1.5 text-[11px] text-[#667085]">{periods.length ? `${periods[0].month} – ${periods[periods.length - 1].month}` : 'No reporting period'}</p>
+        </div>
+        <div className="flex flex-col items-start gap-1.5 sm:items-end">
+          <span className="text-[10px] font-medium text-[#667085]">Chart view</span>
+          <div role="group" aria-label="Chart geometry" className="inline-flex items-center gap-0.5 rounded-lg border border-[#D8D2DF] bg-[#EEEAF5] p-0.5">
           {geometries.map((option) => (
             <button
               key={option.id}
               type="button"
               aria-pressed={geometry === option.id}
               onClick={() => setGeometry(option.id)}
-              className={`rounded-md px-3 py-1 text-[11px] font-medium transition-colors cursor-pointer ${
+              className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer ${
                 geometry === option.id ? 'bg-[#5625B8] text-white shadow-sm' : 'text-[#625B6B] hover:text-[#15131A]'
               }`}
             >
               {option.label}
             </button>
           ))}
-        </div>
-
-        <div className="flex items-center gap-2 font-data text-[11px] text-[#667085]">
-          <span className="truncate max-w-[140px]">{orgName}</span>
-          <span>·</span>
-          <span>
-            {selectedIndex !== null
-              ? `${periods[selectedIndex]?.month} · ${formatEmission(values[selectedIndex])} t`
-              : `Avg ${formatEmission(total / Math.max(periods.length, 1))} t`}
-          </span>
+          </div>
         </div>
       </div>
 
-      <div ref={chartRef} className="relative mt-3 flex-1 min-h-[225px]" onMouseLeave={() => setHoveredIndex(null)}>
+      <div ref={chartRef} className="relative mt-2 flex-1 min-h-[210px] xl:min-h-[190px]" onMouseLeave={() => setHoveredIndex(null)}>
         {geometry === 'compare' ? (
           <StripedBarChart labels={periods.map((p) => p.month)} series={compareSeries} unit="tCO₂e" height={200} />
         ) : (
@@ -494,6 +526,10 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({
                     <stop offset="0%" stopColor="#8A6BE8" />
                     <stop offset="100%" stopColor="#D7C9FA" />
                   </linearGradient>
+                  <linearGradient id={`${chartId}-area`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#7657DF" stopOpacity="0.22" />
+                    <stop offset="100%" stopColor="#7657DF" stopOpacity="0.015" />
+                  </linearGradient>
                 </defs>
 
                 {ticks.map((tick) => {
@@ -507,6 +543,11 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({
                     </g>
                   );
                 })}
+
+                {geometry === 'trend' && trendPoints.length > 0 && <>
+                  <motion.path d={trendArea} fill={`url(#${chartId}-area)`} initial={reduceMotion ? false : { opacity: 0 }} animate={{ opacity: chartInView ? 1 : 0 }} transition={{ duration: reduceMotion ? 0 : 0.5 }} />
+                  <motion.path d={trendLine} fill="none" stroke="#7657DF" strokeWidth="3.5" strokeLinecap="round" initial={reduceMotion ? false : { pathLength: 0 }} animate={{ pathLength: chartInView ? 1 : 0 }} transition={{ duration: reduceMotion ? 0 : 0.75, ease: [0.22, 1, 0.36, 1] }} />
+                </>}
 
                 {periods.map((month, index) => {
                   const value = values[index];
@@ -573,8 +614,13 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({
                         </g>
                       )}
 
+                      {geometry === 'trend' && <>
+                        {active && <line x1={x} x2={x} y1={plotTop} y2={plotBottom} stroke="#7657DF" strokeOpacity="0.32" strokeDasharray="4 5" pointerEvents="none" />}
+                        <circle cx={x} cy={y} r={active ? 7 : 3.5} fill="#7657DF" stroke="#FFFFFF" strokeWidth={active ? 2.5 : 0} pointerEvents="none" />
+                      </>}
+
                       <rect x={x - cellWidth / 2} y={plotTop} width={cellWidth} height={plotBottom - plotTop + 40} fill="transparent" />
-                      {active && (
+                      {active && geometry !== 'trend' && (
                         <rect
                           x={x - barWidth / 2 - 4}
                           y={Math.max(plotTop, y - 4)}
@@ -606,6 +652,10 @@ export const MonthlyTimelineCard: React.FC<MonthlyTimelineCardProps> = ({
           </>
         )}
       </div>
+      {geometry !== 'compare' && <footer className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-[#E5E0EA] pt-2.5 text-[11px] text-[#667085]">
+        <span className="inline-flex items-center gap-2"><i aria-hidden="true" className={`h-2.5 w-2.5 rounded-sm ${geometry === 'trend' ? 'bg-[#7657DF]' : 'bg-[#5625B8]'}`} />{effectiveScope === 'all' ? 'Total emissions' : `Scope ${effectiveScope.slice(-1)} emissions`}</span>
+        <span className="truncate max-w-[48%]">{selectedIndex !== null ? `${periods[selectedIndex]?.month} · ${formatEmission(values[selectedIndex])} tCO₂e` : `${orgName} · Avg ${formatEmission(total / Math.max(periods.length, 1))} tCO₂e`}</span>
+      </footer>}
     </section>
   );
 };

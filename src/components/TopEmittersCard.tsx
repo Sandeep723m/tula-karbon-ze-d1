@@ -90,23 +90,12 @@ export const TopEmittersCard: React.FC<TopEmittersCardProps> = ({ data, onSelect
 
   const maxEmissions = Math.max(...filteredItems.map((i) => i.emissions), 1);
 
-  const activeScopeLabel = allScopesSelected
-    ? 'All Scopes'
-    : [scopeCombo.scope1 && 'S1', scopeCombo.scope2 && 'S2', scopeCombo.scope3 && 'S3'].filter(Boolean).join(' + ');
-
   return (
     <div className="glass-card-top p-4 sm:p-5 relative overflow-visible flex flex-col justify-between h-full">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#E5E0EA]">
-        <div className="flex items-center gap-2 min-w-0">
-          <h2 className="text-[19px] font-semibold text-[#15131A] tracking-tight leading-snug">
-            Top 5 Emissions
-          </h2>
-          {filterBadgeCount > 0 && (
-            <span className="font-data text-[10px] font-medium text-[#5625B8] bg-[#F1EDFF] px-2 py-0.5 rounded-full truncate max-w-[130px]">
-              {activeScopeLabel}
-            </span>
-          )}
-        </div>
+        <h2 className="text-[19px] font-semibold text-[#15131A] tracking-tight leading-snug">
+          Top 5 Emissions
+        </h2>
 
         <div className="flex items-center gap-1.5">
           <div className="flex items-center p-0.5 bg-[#EEEAF5] rounded-lg border border-[#D8D2DF] text-[11px]">

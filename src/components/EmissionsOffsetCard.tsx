@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
 import { YearEmissionsData } from '../types';
 
 interface EmissionsOffsetCardProps {
@@ -9,7 +8,6 @@ interface EmissionsOffsetCardProps {
 }
 
 type ProjectStatusId = 'in-progress' | 'completed' | 'in-review' | 'on-hold';
-type ViewMode = 'count' | 'tonnage';
 
 interface ProjectStatusDatum {
   id: ProjectStatusId;
@@ -49,7 +47,6 @@ function allocateSegmentCounts(data: ProjectStatusDatum[], totalProjects: number
 export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }) => {
   const [hoveredCategory, setHoveredCategory] = useState<ProjectStatusId | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<ProjectStatusId | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('count');
   const [focusIndex, setFocusIndex] = useState(0);
   const reduceMotion = useReducedMotion();
   const gaugeRef = useRef<HTMLDivElement>(null);
@@ -65,21 +62,10 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
       share: totalProjects ? (status.count / totalProjects) * 100 : 0
     }))
   );
-  const totalTonnage = data.totalOffset;
   const activeId = hoveredCategory ?? selectedCategory;
   const activeCategory = activeId ? projectStatusData.find((status) => status.id === activeId) ?? null : null;
-  const valueForStatus = (status: ProjectStatusDatum) =>
-    viewMode === 'count' ? status.count.toLocaleString() : `${(status.tonnage / 1000).toFixed(1)}k`;
-  const mainValue = activeCategory
-    ? valueForStatus(activeCategory)
-    : viewMode === 'count'
-      ? totalProjects.toLocaleString()
-      : `${(totalTonnage / 1000).toFixed(1)}k`;
-  const mainLabel = activeCategory
-    ? activeCategory.name
-    : viewMode === 'count'
-      ? 'Active Projects'
-      : 'tCO₂e Retired';
+  const mainValue = activeCategory ? activeCategory.count.toLocaleString() : totalProjects.toLocaleString();
+  const mainLabel = activeCategory ? activeCategory.name : 'Active Projects';
 
   const handleSegmentKeyDown = (event: React.KeyboardEvent<SVGLineElement>, index: number) => {
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -114,9 +100,6 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
         <h2 id="project-status-title" className="text-[17px] font-semibold leading-tight tracking-tight text-[#15131A] whitespace-nowrap">
           Reduction Portfolio
         </h2>
-        <span className="rounded-full border border-[#B7F0C8] bg-[#E9FBEF] px-2.5 py-0.5 text-[10px] font-semibold leading-none text-[#15803D] shrink-0">
-          Approved
-        </span>
       </header>
 
       {/* Gauge Body */}
@@ -202,7 +185,7 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
           <div className="pointer-events-none absolute inset-x-0 top-[47%] flex flex-col items-center text-center">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
-                key={`${activeCategory?.id ?? 'total'}-${mainValue}-${viewMode}`}
+                key={`${activeCategory?.id ?? 'total'}-${mainValue}`}
                 initial={reduceMotion ? false : { opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={reduceMotion ? undefined : { opacity: 0, y: -3 }}
@@ -219,14 +202,6 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setViewMode((mode) => (mode === 'count' ? 'tonnage' : 'count'))}
-          className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-[#E0D2FF] bg-[#F6F0FF]/90 px-3.5 py-1.5 text-[11px] font-semibold text-[#5625B8] transition-colors hover:bg-[#EFE5FF] cursor-pointer"
-        >
-          <span className="font-data">{viewMode === 'count' ? `${totalProjects} Projects · Tonnage` : `${(totalTonnage / 1000).toFixed(1)}k tCO₂e · Projects`}</span>
-          <ArrowRight className="h-3.5 w-3.5 shrink-0" />
-        </button>
       </div>
 
       {/* Clean Non-Truncating Status Grid */}
@@ -269,7 +244,7 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
                 </div>
                 <div className="mt-1 flex items-baseline justify-between pl-4 font-data">
                   <span className="font-semibold text-[#15131A]">
-                    {viewMode === 'count' ? status.count : `${(status.tonnage / 1000).toFixed(1)}k`}
+                    {status.count}
                   </span>
                   <span className="text-[10px] text-[#667085]">{Math.round(share)}%</span>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { DATA_QUALITY_METRICS } from '../data/intelligenceData';
 import { MicroDotMatrix } from './charts/AnalyticsCharts';
@@ -14,8 +14,6 @@ const colorMap = {
 };
 
 export const DataQualityCard: React.FC<DataQualityCardProps> = ({ onOpenQualityView }) => {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-
   return (
     <section className="glass-card-top p-4 sm:p-5 flex flex-col justify-between h-full" aria-labelledby="data-quality-title">
       {/* Unified Single-Line Header (No Icon Box) */}
@@ -37,18 +35,11 @@ export const DataQualityCard: React.FC<DataQualityCardProps> = ({ onOpenQualityV
       {/* 2x2 Dot Matrix Grid filling vertical height cleanly */}
       <div className="flex-1 grid grid-cols-2 gap-3 pt-3.5 content-stretch">
         {DATA_QUALITY_METRICS.map((metric) => {
-          const isHovered = hoveredId === metric.id;
           return (
             <div
               key={metric.id}
-              onMouseEnter={() => setHoveredId(metric.id)}
-              onMouseLeave={() => setHoveredId(null)}
-              tabIndex={0}
-              onFocus={() => setHoveredId(metric.id)}
-              onBlur={() => setHoveredId(null)}
-              className={`rounded-xl border p-3.5 flex flex-col justify-between transition-colors cursor-pointer outline-none relative ${
-                isHovered ? 'bg-white border-[#5625B8]/40 shadow-sm' : 'bg-white/70 border-[#E5E0EA]'
-              }`}
+              aria-label={`${metric.label}: ${metric.percent}%. ${metric.detail}`}
+              className="flex min-h-[148px] flex-col justify-between rounded-xl border border-[#E5E0EA] bg-white/70 p-3.5"
             >
               <div className="flex items-baseline justify-between gap-1">
                 <span className="font-data text-[24px] font-semibold text-[#15131A] leading-none">
@@ -60,20 +51,11 @@ export const DataQualityCard: React.FC<DataQualityCardProps> = ({ onOpenQualityV
                 </span>
               </div>
 
-              <div className="my-2">
+              <div className="flex flex-1 items-center justify-center py-2">
                 <MicroDotMatrix percent={metric.percent} color={colorMap[metric.status]} />
               </div>
 
               <div className="text-[11px] font-medium text-[#15131A] leading-snug">{metric.label}</div>
-
-              {isHovered && (
-                <div
-                  role="tooltip"
-                  className="pointer-events-none absolute left-1/2 -top-9 -translate-x-1/2 z-20 rounded-lg border border-[#D8D2DF] bg-white/95 px-2.5 py-1 text-[10px] text-[#15131A] shadow-md whitespace-nowrap"
-                >
-                  {metric.detail}
-                </div>
-              )}
             </div>
           );
         })}

@@ -113,7 +113,7 @@ export const NetZeroPathwayView: React.FC<NetZeroPathwayViewProps> = ({
         <div className="xl:col-span-8">
           <AnalyticsCard
             title={`Net-Zero Trajectory (2020–${endYear})`}
-            badge={<span className="font-data text-[10px] text-[#5625B8] bg-[#F1EDFF] px-2 py-0.5 rounded-full">SBTi Model</span>}
+            badge={<span className="font-data text-[10px] text-[#5625B8] bg-[#F1EDFF] px-2 py-0.5 rounded-full">Scenario model</span>}
             actions={
               <div className="flex items-center gap-1.5">
                 {[

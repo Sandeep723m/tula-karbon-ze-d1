@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ArrowDownRight, ArrowUpRight, Target } from 'lucide-react';
 import { YearEmissionsData } from '../types';
 import { computeProjectedThresholdYear } from '../data/intelligenceData';
@@ -16,7 +16,6 @@ export const KpiSummaryStrip: React.FC<KpiSummaryStripProps> = ({
   targetYear,
   onNavigateNetZero
 }) => {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const baseline2020 = Math.round(data.totalEmissions / 0.7867); // 180k when total is 141.6k
   const yoyPct = Number((((data.totalEmissions - data.previousYear) / Math.max(data.previousYear, 1)) * 100).toFixed(1));
@@ -36,8 +35,6 @@ export const KpiSummaryStrip: React.FC<KpiSummaryStripProps> = ({
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       {/* Tile 1: Total Emissions + Sparkline */}
       <div
-        onMouseEnter={() => setHoveredId('gross')}
-        onMouseLeave={() => setHoveredId(null)}
         className="glass-card-top px-4 py-3.5 relative flex items-center justify-between gap-3 cursor-default"
       >
         <div className="min-w-0">
@@ -56,18 +53,10 @@ export const KpiSummaryStrip: React.FC<KpiSummaryStripProps> = ({
           <polyline fill="none" stroke="#5625B8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" points={sparkPts} />
         </svg>
 
-        {hoveredId === 'gross' && (
-          <div className="absolute left-4 right-4 -bottom-11 z-30 rounded-xl border border-[#D8D2DF] bg-white/95 px-3 py-1.5 text-[11px] shadow-lg backdrop-blur-md flex items-center justify-between">
-            <span className="text-[#667085]">Gross {data.year}</span>
-            <span className="font-data font-semibold text-[#15131A]">{data.totalEmissions.toLocaleString()} tCO₂e</span>
-          </div>
-        )}
       </div>
 
       {/* Tile 2: Annual Change */}
       <div
-        onMouseEnter={() => setHoveredId('yoy')}
-        onMouseLeave={() => setHoveredId(null)}
         className="glass-card-top px-4 py-3.5 relative flex items-center justify-between gap-3 cursor-default"
       >
         <div className="min-w-0">
@@ -85,21 +74,10 @@ export const KpiSummaryStrip: React.FC<KpiSummaryStripProps> = ({
           {yoyPct <= 0 ? <ArrowDownRight className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
         </span>
 
-        {hoveredId === 'yoy' && (
-          <div className="absolute left-4 right-4 -bottom-11 z-30 rounded-xl border border-[#D8D2DF] bg-white/95 px-3 py-1.5 text-[11px] shadow-lg backdrop-blur-md flex items-center justify-between">
-            <span className="text-[#667085]">Net YoY Delta</span>
-            <span className="font-data font-semibold text-[#15131A]">
-              {(data.totalEmissions - data.previousYear > 0 ? '+' : '')}
-              {(data.totalEmissions - data.previousYear).toLocaleString()} tCO₂e
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Tile 3: Baseline Reduction */}
       <div
-        onMouseEnter={() => setHoveredId('base')}
-        onMouseLeave={() => setHoveredId(null)}
         className="glass-card-top px-4 py-3.5 relative flex items-center justify-between gap-3 cursor-default"
       >
         <div className="min-w-0 flex-1">
@@ -124,22 +102,12 @@ export const KpiSummaryStrip: React.FC<KpiSummaryStripProps> = ({
           ))}
         </div>
 
-        {hoveredId === 'base' && (
-          <div className="absolute left-4 right-4 -bottom-11 z-30 rounded-xl border border-[#D8D2DF] bg-white/95 px-3 py-1.5 text-[11px] shadow-lg backdrop-blur-md flex items-center justify-between">
-            <span className="text-[#667085]">Abated vs 2020</span>
-            <span className="font-data font-semibold text-[#15803D]">
-              -{(baseline2020 - data.totalEmissions).toLocaleString()} tCO₂e
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Tile 4: Net-Zero Target Status */}
       <button
         type="button"
         onClick={onNavigateNetZero}
-        onMouseEnter={() => setHoveredId('nz')}
-        onMouseLeave={() => setHoveredId(null)}
         className="glass-card-top px-4 py-3.5 relative flex items-center justify-between gap-3 text-left cursor-pointer group"
       >
         <div className="min-w-0">
@@ -154,7 +122,7 @@ export const KpiSummaryStrip: React.FC<KpiSummaryStripProps> = ({
             </span>
           </div>
           <div className="mt-1 flex items-baseline gap-1.5">
-            <span className="font-data text-[24px] font-semibold tracking-[-0.03em] text-[#15131A] leading-none group-hover:text-[#5625B8] transition-colors">
+            <span className="font-data text-[24px] font-semibold tracking-[-0.03em] text-[#15131A] leading-none">
               {projectedYear ?? 'N/A'}
             </span>
             <span className="text-[11px] text-[#667085]">projected</span>
@@ -167,12 +135,6 @@ export const KpiSummaryStrip: React.FC<KpiSummaryStripProps> = ({
           <Target className="w-4 h-4" />
         </span>
 
-        {hoveredId === 'nz' && (
-          <div className="absolute left-4 right-4 -bottom-11 z-30 rounded-xl border border-[#D8D2DF] bg-white/95 px-3 py-1.5 text-[11px] shadow-lg backdrop-blur-md flex items-center justify-between">
-            <span className="text-[#667085]">90% Threshold</span>
-            <span className="font-data font-semibold text-[#15131A]">{(thresholdTonnes / 1000).toFixed(1)}k tCO₂e</span>
-          </div>
-        )}
       </button>
     </div>
   );

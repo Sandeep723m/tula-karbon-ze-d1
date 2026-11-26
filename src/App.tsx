@@ -13,9 +13,8 @@ import { TopEmittersCard } from './components/TopEmittersCard';
 import { GlobalFilterBar } from './components/GlobalFilterBar';
 import { KpiSummaryStrip } from './components/KpiSummaryStrip';
 import { NetZeroRoadmapCard } from './components/NetZeroRoadmapCard';
-import { IntensityEnergyCard } from './components/IntensityEnergyCard';
-import { DataQualityCard } from './components/DataQualityCard';
 import { LiveEmissionsCard } from './components/LiveEmissionsCard';
+import { DataQualityCard } from './components/DataQualityCard';
 import { EmissionsAnalysisView } from './components/views/EmissionsAnalysisView';
 import { OrganisationIntelligenceView } from './components/views/OrganisationIntelligenceView';
 import { PerformanceView } from './components/views/PerformanceView';
@@ -30,21 +29,10 @@ import { TelemetryView } from './components/TelemetryView';
 import { AnalyticsShowcase } from './components/AnalyticsShowcase';
 import { EMISSIONS_DATA } from './data/emissionsData';
 import { applyGlobalFiltersToYearData } from './data/intelligenceData';
-import {
-  EmitterItem,
-  GlobalFilterState,
-  IntelligenceArea,
-  YearEmissionsData
-} from './types';
+import { EmitterItem, GlobalFilterState, IntelligenceArea, YearEmissionsData } from './types';
 import {
   Download,
-  LayoutDashboard,
-  LayoutGrid,
-  Flame,
-  Building2,
-  TrendingUp,
-  Compass,
-  ShieldCheck
+  LayoutDashboard
 } from 'lucide-react';
 
 const containerVariants: Variants = {
@@ -99,15 +87,6 @@ const INITIAL_FILTERS: GlobalFilterState = {
   calcMethod: 'all',
   targetScenario: 'current'
 };
-
-const INTELLIGENCE_AREAS: { id: IntelligenceArea; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'overview', label: 'Overview', icon: LayoutGrid },
-  { id: 'emissions', label: 'Emissions', icon: Flame },
-  { id: 'organisation', label: 'Organisation', icon: Building2 },
-  { id: 'performance', label: 'Performance', icon: TrendingUp },
-  { id: 'netzero', label: 'Net-Zero Pathway', icon: Compass },
-  { id: 'quality', label: 'Data Quality', icon: ShieldCheck }
-];
 
 export default function App() {
   const prefersReducedMotion = useReducedMotion();
@@ -223,48 +202,9 @@ export default function App() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
               <div className="flex flex-wrap items-center gap-3">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h1 className="text-[20px] sm:text-[24px] font-semibold text-[#15131A] tracking-tight leading-tight">
-                      Carbon Intelligence
-                    </h1>
-                    <span className="text-[11px] font-data font-medium text-[#5625B8] bg-[#F1EDFF] border border-[#D9CFFA] px-2 py-0.5 rounded-full">
-                      FY {filters.year}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 6-Area Sub-Navigation */}
-                <div
-                  role="tablist"
-                  aria-label="Carbon Intelligence areas"
-                  className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#EEEAF5]/85 border border-[#D8D2DF] overflow-x-auto max-w-full"
-                >
-                  {INTELLIGENCE_AREAS.map((area) => {
-                    const Icon = area.icon;
-                    const active = activeArea === area.id;
-                    return (
-                      <button
-                        key={area.id}
-                        type="button"
-                        role="tab"
-                        aria-selected={active}
-                        onClick={() => setActiveArea(area.id)}
-                        className={`relative inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-colors whitespace-nowrap cursor-pointer ${
-                          active ? 'text-white' : 'text-[#494454] hover:text-[#15131A] hover:bg-white/75'
-                        }`}
-                      >
-                        {active && (
-                          <motion.span
-                            layoutId="intelligence-area-pill"
-                            transition={{ layout: { duration: prefersReducedMotion ? 0 : 0.2 } }}
-                            className="absolute inset-0 rounded-lg bg-[#5625B8] shadow-xs"
-                          />
-                        )}
-                        <Icon className="w-3.5 h-3.5 relative z-10" />
-                        <span className="relative z-10">{area.label}</span>
-                      </button>
-                    );
-                  })}
+                  <h1 className="text-[20px] sm:text-[24px] font-semibold text-[#15131A] tracking-tight leading-tight">
+                    Carbon Intelligence
+                  </h1>
                 </div>
               </div>
 
@@ -316,7 +256,7 @@ export default function App() {
                   />
                 </motion.div>
 
-                {/* Row 2: 5 cols Scope Footprint + 7 cols Hero Net-Zero Roadmap */}
+                {/* Row 2: Scope footprint + Net-Zero roadmap */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
                   <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[1]} className="lg:col-span-5 flex flex-col">
                     <TotalEmissionsCard
@@ -334,14 +274,13 @@ export default function App() {
                       setAnnualRate={setAnnualReductionRate}
                       targetYear={targetYear}
                       setTargetYear={setTargetYear}
-                      onExploreScenarios={() => setActiveArea('netzero')}
                     />
                   </motion.div>
                 </div>
 
-                {/* Row 3: 7 cols Monthly/Quarterly Timeline + 5 cols Top 5 Emissions */}
+                {/* Row 3: Emissions timeline + Top emitters */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-                  <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[2]} className="lg:col-span-7 flex flex-col">
+                  <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[2]} className="lg:col-span-7 flex min-w-0 flex-col">
                     <MonthlyTimelineCard
                       data={currentData}
                       granularity={filters.granularity}
@@ -351,23 +290,19 @@ export default function App() {
                     />
                   </motion.div>
 
-                  <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[3]} className="lg:col-span-5 flex flex-col">
+                  <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[3]} className="lg:col-span-5 flex min-w-0 flex-col">
                     <TopEmittersCard data={currentData} onSelectEmitter={setSelectedEmitter} />
                   </motion.div>
                 </div>
 
-                {/* Row 4: Live Emissions + Reduction Portfolio + Intensity & Energy + Data Quality */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch">
+                {/* Row 4: Live emissions + Offsets + Reporting confidence */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-stretch">
                   <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[0]} className="flex flex-col">
                     <LiveEmissionsCard data={currentData} globalOrgId={filters.orgId} />
                   </motion.div>
 
                   <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[1]} className="flex flex-col">
                     <EmissionsOffsetCard data={currentData} />
-                  </motion.div>
-
-                  <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[2]} className="flex flex-col">
-                    <IntensityEnergyCard data={currentData} scope2Method={filters.scope2Method} />
                   </motion.div>
 
                   <motion.div variants={prefersReducedMotion ? reducedCardVariants : cardEntranceVariants[3]} className="flex flex-col">

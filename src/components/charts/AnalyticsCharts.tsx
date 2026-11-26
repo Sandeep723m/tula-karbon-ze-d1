@@ -761,7 +761,7 @@ export function MicroDotMatrix({
   const total = cols * rows;
   const filled = Math.round((Math.max(0, Math.min(100, percent)) / 100) * total);
   return (
-    <svg viewBox={`0 0 ${cols * 10} ${rows * 10}`} className="w-full h-auto max-w-[112px]" aria-hidden="true">
+    <svg viewBox={`0 0 ${cols * 10} ${rows * 10}`} className="w-full h-auto max-w-[160px]" aria-hidden="true">
       {Array.from({ length: total }, (_, idx) => {
         const col = idx % cols;
         const row = Math.floor(idx / cols);
