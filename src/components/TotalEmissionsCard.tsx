@@ -68,15 +68,18 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
   };
 
   const scopeDotBands = [
-    { key: 'scope1', metric: scope1, color: '#5625B8', rows: 2 },
-    { key: 'scope2', metric: scope2, color: '#F46A1F', rows: 2 },
-    { key: 'scope3', metric: scope3, color: '#2563EB', rows: 3 }
+    { key: 'scope1', metric: scope1, color: '#5625B8', remainder: '#E9E0F8' },
+    { key: 'scope2', metric: scope2, color: '#F46A1F', remainder: '#FCE6D9' },
+    { key: 'scope3', metric: scope3, color: '#2563EB', remainder: '#DFEAFE' }
   ];
-  const scopeRows = scopeDotBands.flatMap((scope) => Array.from({ length: scope.rows }, () => scope));
-  const dotColumns = 21;
-  const dotRows = scopeRows.length;
-  const dotPitchX = 19;
-  const dotPitchY = 20;
+  const dotsPerBar = 5;
+  const dotRows = 10;
+  const dotPitchX = 18;
+  const dotPitchY = 14;
+  const barGap = 24;
+  const barWidth = dotsPerBar * dotPitchX;
+  const matrixWidth = scopeDotBands.length * barWidth + (scopeDotBands.length - 1) * barGap;
+  const matrixHeight = dotRows * dotPitchY;
 
   return (
     <div className="glass-card-top p-3 sm:p-4 xl:p-3 relative overflow-hidden flex flex-col justify-between h-full">
@@ -102,7 +105,7 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
         </div>
       </div>
 
-      {/* Dot matrix scope composition */}
+      {/* Three vertical dot bars show each scope's share independently. */}
       <div className="my-auto py-3" onMouseLeave={() => setHoveredScope(null)}>
         <div className="mb-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="font-data text-[30px] font-semibold leading-none tracking-[-0.04em] text-[#16132B]">{formatK(currentTotal)}</span>
@@ -112,21 +115,21 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
             {activeTrend.isReduction ? '-' : '+'}{activeTrend.diffPct}% MoM
           </span>
         </div>
-        <svg viewBox={`0 0 ${dotColumns * dotPitchX} ${dotRows * dotPitchY}`} className="block h-auto w-full" role="group" aria-label={`Scope emissions composition. Scope 1 ${scope1.percentage}%, Scope 2 ${scope2.percentage}%, Scope 3 ${scope3.percentage}%`}>
-          {Array.from({ length: dotRows * dotColumns }, (_, index) => {
-            const col = index % dotColumns;
-            const row = Math.floor(index / dotColumns);
-            const scope = scopeRows[row];
+        <svg viewBox={`0 0 ${matrixWidth} ${matrixHeight}`} className="block h-auto w-full" role="group" aria-label={`Scope emissions as vertical dot bars. Scope 1 ${scope1.percentage}%, Scope 2 ${scope2.percentage}%, Scope 3 ${scope3.percentage}%`}>
+          {scopeDotBands.flatMap((scope, scopeIndex) => Array.from({ length: dotsPerBar * dotRows }, (_, dotIndex) => {
+            const col = dotIndex % dotsPerBar;
+            const row = Math.floor(dotIndex / dotsPerBar);
+            const rowFromBottom = dotRows - 1 - row;
             const dimmed = (selectedScope !== 'all' && selectedScope !== scope.key) || (hoveredScope !== null && hoveredScope !== scope.key);
-            const fadeStart = 0.35 + (scope.metric.percentage / 100) * 0.5;
-            const progress = col / (dotColumns - 1);
-            const fade = progress <= fadeStart ? 1 : Math.max(0.22, 1 - ((progress - fadeStart) / (1 - fadeStart)) * 0.78);
+            const exactFilledRows = (scope.metric.percentage / 100) * dotRows;
+            const dotFill = Math.max(0, Math.min(1, exactFilledRows - rowFromBottom));
+            const index = scopeIndex * dotsPerBar * dotRows + dotIndex;
             return <motion.circle
               key={`${scope.key}-${row}-${col}`}
-              cx={dotPitchX / 2 + col * dotPitchX}
+              cx={scopeIndex * (barWidth + barGap) + dotPitchX / 2 + col * dotPitchX}
               cy={dotPitchY / 2 + row * dotPitchY}
-              r="6.1"
-              fill={scope.color}
+              r="4.5"
+              fill={dotFill > 0 ? scope.color : scope.remainder}
               tabIndex={0}
               role="button"
               aria-label={`${scope.metric.name}, ${scope.metric.percentage}% share`}
@@ -138,10 +141,10 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
               onClick={() => handleScopeSelect(selectedScope === scope.key ? 'all' : scope.key as ScopeType)}
               onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleScopeSelect(selectedScope === scope.key ? 'all' : scope.key as ScopeType); } }}
               initial={reduceMotion ? false : { scale: 0.72, opacity: 0 }}
-              animate={{ scale: 1, opacity: dimmed ? 0.14 : fade }}
+              animate={{ scale: 1, opacity: dimmed ? 0.14 : dotFill > 0 ? dotFill : 0.95 }}
               transition={{ duration: reduceMotion ? 0 : 0.2, delay: reduceMotion ? 0 : index * 0.0008 }}
             />;
-          })}
+          }))}
         </svg>
         <div className="mt-2 grid grid-cols-3 gap-1 border-t border-[#E5E0EA] pt-2 text-[9px]">
           {scopeDotBands.map(({ key, metric, color }) => <button
