@@ -10,20 +10,19 @@ export const TelemetryView: React.FC<TelemetryViewProps> = ({ data }) => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
+        <div className="flex items-center gap-2.5">
           <h2 className="text-[20px] sm:text-[24px] font-semibold text-[#15131A] tracking-tight leading-tight">
-            Continuous Emissions Monitoring &amp; Sensor Telemetry
+            Emissions Sensor Telemetry
           </h2>
-          <p className="text-[13px] sm:text-[14px] text-[#667085] font-normal mt-1">
-            Real-time optical CEMS sensors, smart transformer meters, and weather correlation streams for{' '}
-            <span className="font-data font-medium text-[#15131A]">{data.year}</span>.
-          </p>
+          <span className="font-data text-[11px] font-medium text-[#5625B8] bg-[#F1EDFF] border border-[#D9CFFA] px-2 py-0.5 rounded-full">
+            FY {data.year}
+          </span>
         </div>
 
         <div className="flex items-center gap-2 text-[12px] shrink-0">
           <span className="px-3 py-1.5 rounded-lg bg-[#ECFDF3] border border-[#BBF7D0] text-[#15803D] font-medium flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[#15803D]" />
-            <span className="font-data font-semibold">142</span> Telemetry Nodes Synchronized
+            <span className="font-data font-semibold">142</span> Nodes Online
           </span>
         </div>
       </div>

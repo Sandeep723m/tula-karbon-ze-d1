@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, ArrowRight } from 'lucide-react';
+import { X, ArrowRight } from 'lucide-react';
 import { YearEmissionsData } from '../types';
 
 interface SimulationModalProps {
@@ -50,19 +50,9 @@ export const SimulationModal: React.FC<SimulationModalProps> = ({
           <X className="w-5 h-5" strokeWidth={1.75} />
         </button>
 
-        {/* Modal Header */}
-        <div className="flex items-center gap-2 text-[#5625B8]">
-          <Sparkles className="w-4 h-4" strokeWidth={1.75} />
-          <span className="text-[12px] font-semibold uppercase tracking-wider">
-            Decarbonization Pathway Simulator
-          </span>
-        </div>
         <h3 className="text-[20px] sm:text-[24px] font-semibold text-[#15131A] tracking-tight mt-1">
-          Model Actionable Emissions Reductions
+          Pathway Simulator
         </h3>
-        <p className="text-[13px] text-[#667085] mt-1">
-          Simulate strategic interventions across Scope 1, Scope 2, and supply chain initiatives.
-        </p>
 
         {/* Sliders Grid */}
         <div className="mt-5 space-y-3">

@@ -32,13 +32,13 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
   activeScope = 'all',
   setActiveScope
 }) => {
-  const [selectedScope, setSelectedScope] = useState<ScopeType>(activeScope || 'all');
   const [hoveredScope, setHoveredScope] = useState<string | null>(null);
   const [compositionView, setCompositionView] = useState<'dots' | 'pie'>('dots');
   const reduceMotion = useReducedMotion();
 
+  const selectedScope = activeScope;
+
   const handleScopeSelect = (scope: ScopeType) => {
-    setSelectedScope(scope);
     if (setActiveScope) setActiveScope(scope);
   };
 
@@ -123,17 +123,14 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
     <div className="glass-card-top p-4 sm:p-5 relative overflow-hidden flex flex-col justify-between h-full">
       {/* 1. Header: Title, Status Badges, and Segmented Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E5E0EA]">
-          <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-[20px] font-semibold text-[#15131A] tracking-tight leading-snug">
-              Total CO₂e Emissions
-            </h2>
-            <span className="text-[11px] font-data font-semibold text-[#6E35DB] bg-[#F5EEFF] border border-[#E6D7FF] px-2 py-0.5 rounded-full">
-              ISO 14064
-            </span>
-          </div>
-          <p className="text-[12px] text-[#667085] font-normal mt-0.5">Gross emissions across Scopes 1, 2, and 3</p>
-          </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h2 className="text-[19px] font-semibold text-[#15131A] tracking-tight leading-snug">
+            Total CO₂e Emissions
+          </h2>
+          <span className="text-[11px] font-data font-semibold text-[#6E35DB] bg-[#F5EEFF] border border-[#E6D7FF] px-2 py-0.5 rounded-full">
+            ISO 14064
+          </span>
+        </div>
 
         {/* Segmented Filter Control (8px radius, lavender track, deep violet active) */}
         <div className="flex items-center gap-0.5 p-1 bg-white/60 rounded-full border border-[#E5E0EA] text-[12px] self-start sm:self-auto overflow-x-auto max-w-full shadow-[0_2px_10px_rgba(43,26,68,.05)]">
@@ -176,19 +173,32 @@ export const TotalEmissionsCard: React.FC<TotalEmissionsCardProps> = ({
               {activeTrend.isReduction ? '-' : '+'}{activeTrend.diffPct}% from last month
             </div>
             <AnimatePresence mode="wait" initial={false}>
-              {compositionView === 'dots' ? <motion.div key="scope-dots" className="mt-3" role="group" aria-label={`Scope emissions composition: Scope 1 ${scope1.percentage} percent, Scope 2 ${scope2.percentage} percent, Scope 3 ${scope3.percentage} percent`} initial={reduceMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduceMotion ? 0 : 0.18 }}>
+              {compositionView === 'dots' ? <motion.div key="scope-dots" className="mt-3 relative" role="group" aria-label={`Scope emissions composition: Scope 1 ${scope1.percentage} percent, Scope 2 ${scope2.percentage} percent, Scope 3 ${scope3.percentage} percent`} initial={reduceMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -4 }} transition={{ duration: reduceMotion ? 0 : 0.18 }} onMouseLeave={() => setHoveredScope(null)}>
+              {hoveredScope && (
+                <div className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 z-20 rounded-lg border border-[#D8D2DF] bg-white/95 px-2.5 py-1 text-[10px] shadow-md backdrop-blur-md whitespace-nowrap">
+                  <span className="font-semibold text-[#15131A]">
+                    {hoveredScope === 'scope1' ? scope1.name : hoveredScope === 'scope2' ? scope2.name : scope3.name}
+                  </span>
+                  {' · '}
+                  <span className="font-data font-semibold text-[#5625B8]">
+                    {(hoveredScope === 'scope1' ? scope1.value : hoveredScope === 'scope2' ? scope2.value : scope3.value).toLocaleString()} t
+                  </span>
+                  {' '}
+                  ({hoveredScope === 'scope1' ? scope1.percentage : hoveredScope === 'scope2' ? scope2.percentage : scope3.percentage}%)
+                </div>
+              )}
               <svg viewBox={`0 0 ${dotColumns * dotPitchX} ${dotRows * dotPitchY}`} className="block w-full h-auto max-h-[154px]" role="img" aria-label={`Scope share dot matrix: Scope 1 ${scope1.percentage}%, Scope 2 ${scope2.percentage}%, Scope 3 ${scope3.percentage}%. Each scope is shown in its own two or three row band.`}>
                 {Array.from({ length: dotRows * dotColumns }, (_, index) => {
                   const col = index % dotColumns;
                   const row = Math.floor(index / dotColumns);
                   const scope = scopeRows[row];
-                  const dimmed = selectedScope !== 'all' && selectedScope !== scope.key;
+                  const dimmed = (selectedScope !== 'all' && selectedScope !== scope.key) || (hoveredScope !== null && hoveredScope !== scope.key);
                   // Match the reference's saturated-to-soft dot field while using only the three real scope values.
                   const fadeStart = 0.35 + (scope.metric.percentage / 100) * 0.5;
                   const progress = col / (dotColumns - 1);
                   const fade = progress <= fadeStart ? 1 : Math.max(0.22, 1 - ((progress - fadeStart) / (1 - fadeStart)) * 0.78);
-                  const targetOpacity = dimmed ? 0.12 : fade;
-                  return <motion.circle key={`${scope.key}-${row}-${col}`} cx={dotPitchX / 2 + col * dotPitchX} cy={dotPitchY / 2 + row * dotPitchY} r="6.1" fill={scope.color} initial={reduceMotion ? false : { scale: .72, opacity: 0 }} animate={{ scale: 1, opacity: targetOpacity }} transition={{ duration: reduceMotion ? 0 : .2, delay: reduceMotion ? 0 : index * .0008 }} />;
+                  const targetOpacity = dimmed ? 0.14 : fade;
+                  return <motion.circle key={`${scope.key}-${row}-${col}`} cx={dotPitchX / 2 + col * dotPitchX} cy={dotPitchY / 2 + row * dotPitchY} r="6.1" fill={scope.color} className="cursor-pointer" onMouseEnter={() => setHoveredScope(scope.key)} onClick={() => handleScopeSelect(selectedScope === scope.key ? 'all' : scope.key as ScopeType)} initial={reduceMotion ? false : { scale: .72, opacity: 0 }} animate={{ scale: 1, opacity: targetOpacity }} transition={{ duration: reduceMotion ? 0 : .2, delay: reduceMotion ? 0 : index * .0008 }} />;
                 })}
               </svg>
               </motion.div> : <motion.div key="scope-pie" className="mt-1 flex justify-center" role="group" aria-label="Scope emissions pie chart" initial={reduceMotion ? false : { opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }} transition={{ duration: reduceMotion ? 0 : 0.2 }}>

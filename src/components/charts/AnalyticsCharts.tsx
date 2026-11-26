@@ -104,7 +104,13 @@ export function DotMatrixChart({
         </g>;
       })}
     </svg>
-    <div className="mt-2 flex flex-wrap justify-between gap-2 text-[10px] text-[#878891]"><span>Each column is one reporting period</span><span>Focus a column for detail</span></div>
+    <div className="mt-1.5 grid text-center" style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}>
+      {data.map((point, index) => (
+        <span key={point.label} className={`text-[10px] font-data ${activeIndex === index ? 'text-[#5625B8] font-semibold' : 'text-[#85808D]'}`}>
+          {point.label}
+        </span>
+      ))}
+    </div>
   </div>;
 }
 
@@ -204,7 +210,10 @@ export function CapsuleDivergingChart({ data, unit = 'tCO₂e' }: { data: ChartP
       })}
     </svg>
     <div className="grid text-center" style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}>{data.map((point, index) => <button key={point.label} type="button" onMouseEnter={() => setHovered(index)} onFocus={() => setHovered(index)} onClick={() => setSelected(selected === index ? null : index)} className={`rounded-md py-1 text-[10px] cursor-pointer ${activeIndex === index ? 'bg-[#F1EDFF] text-[#6248D5] font-semibold' : 'text-[#62636D]'}`}>{point.label}</button>)}</div>
-    <div className="mt-2 flex justify-between text-[10px] text-[#878891]"><span>Increase above baseline</span><span>Reduction below baseline</span></div>
+    <div className="mt-2 flex items-center gap-3 text-[10px] text-[#667085]">
+      <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[var(--chart-rose-500)]" />Increase</span>
+      <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[var(--chart-teal-700)]" />Reduction</span>
+    </div>
   </div>;
 }
 
@@ -347,3 +356,519 @@ export function SegmentedProgress({ value, segments = 24, color = 'var(--chart-v
     <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${segments}, minmax(0, 1fr))` }}>{Array.from({ length: segments }, (_, index) => <span key={index} className="h-2 rounded-full transition-colors duration-200" style={{ backgroundColor: index < filled ? color : '#EDEDF2' }}/>)}</div>
   </div>;
 }
+
+export interface WaterfallItem {
+  id: string;
+  label: string;
+  delta: number;
+  type: 'start' | 'increase' | 'decrease' | 'end';
+  detail?: string;
+}
+
+export function WaterfallBridgeChart({ data, unit = 'tCO₂e' }: { data: WaterfallItem[]; unit?: string }) {
+  const reduceMotion = useReducedMotion();
+  const [hovered, setHovered] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
+  const active = hovered ?? selected;
+
+  let running = 0;
+  const computed = data.map((item) => {
+    if (item.type === 'start' || item.type === 'end') {
+      running = item.delta;
+      return { ...item, start: 0, end: item.delta };
+    }
+    const start = running;
+    running += item.delta;
+    return { ...item, start, end: running };
+  });
+
+  const maxVal = Math.max(...computed.flatMap((d) => [d.start, d.end]), 1) * 1.1;
+  const width = 1000;
+  const height = 220;
+  const padTop = 18;
+  const padBottom = 16;
+  const plotH = height - padTop - padBottom;
+  const cell = width / Math.max(computed.length, 1);
+  const barW = Math.min(72, cell * 0.56);
+  const yFor = (val: number) => padTop + plotH - (val / maxVal) * plotH;
+
+  const colorFor = (type: WaterfallItem['type']) => {
+    if (type === 'start') return '#8062E8';
+    if (type === 'end') return '#5625B8';
+    if (type === 'increase') return 'var(--chart-rose-500)';
+    return 'var(--chart-teal-700)';
+  };
+
+  return (
+    <div className="relative pt-8" onMouseLeave={() => setHovered(null)}>
+      {active !== null && computed[active] && (
+        <ChartTooltip
+          label={computed[active].label}
+          value={`${computed[active].type === 'increase' ? '+' : ''}${computed[active].delta.toLocaleString()}`}
+          unit={unit}
+          comparison={computed[active].detail}
+        />
+      )}
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible" role="group" aria-label="Emissions bridge waterfall chart">
+        {[0, 0.5, 1].map((r) => (
+          <line key={r} x1="0" x2={width} y1={padTop + plotH * r} y2={padTop + plotH * r} stroke="var(--chart-grid)" strokeDasharray="4 6" />
+        ))}
+        {computed.map((item, idx) => {
+          const x = idx * cell + cell / 2 - barW / 2;
+          const yTop = yFor(Math.max(item.start, item.end));
+          const yBot = yFor(Math.min(item.start, item.end));
+          const barH = Math.max(6, yBot - yTop);
+          const dim = active !== null && active !== idx;
+          const next = computed[idx + 1];
+          const connectorY = yFor(item.end);
+
+          return (
+            <g
+              key={item.id}
+              data-chart-point
+              tabIndex={0}
+              role="button"
+              aria-label={`${item.label}: ${item.delta > 0 && item.type === 'increase' ? '+' : ''}${item.delta.toLocaleString()} ${unit}`}
+              onFocus={() => setHovered(idx)}
+              onBlur={() => setHovered(null)}
+              onMouseEnter={() => setHovered(idx)}
+              onClick={() => setSelected(selected === idx ? null : idx)}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowLeft') focusNeighbor(e, -1);
+                if (e.key === 'ArrowRight') focusNeighbor(e, 1);
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(selected === idx ? null : idx); }
+              }}
+              className="cursor-pointer outline-none"
+            >
+              {next && (
+                <line
+                  x1={x + barW}
+                  x2={(idx + 1) * cell + cell / 2 - barW / 2}
+                  y1={connectorY}
+                  y2={connectorY}
+                  stroke="#C7BED3"
+                  strokeWidth="1.5"
+                  strokeDasharray="3 4"
+                />
+              )}
+              <motion.rect
+                x={x}
+                width={barW}
+                rx={6}
+                fill={colorFor(item.type)}
+                initial={reduceMotion ? false : { y: yBot, height: 0, opacity: 0 }}
+                animate={{ y: yTop, height: barH, opacity: dim ? 0.28 : 1 }}
+                transition={{ duration: reduceMotion ? 0 : 0.45, delay: reduceMotion ? 0 : idx * 0.05 }}
+              />
+              <text
+                x={x + barW / 2}
+                y={yTop - 7}
+                textAnchor="middle"
+                fill={active === idx ? '#15131A' : '#667085'}
+                fontSize="13"
+                fontWeight="600"
+                fontFamily="IBM Plex Mono, monospace"
+              >
+                {item.type === 'increase' ? '+' : ''}{(item.delta / 1000).toFixed(1)}k
+              </text>
+              <rect x={idx * cell} y="0" width={cell} height={height} fill="transparent" />
+            </g>
+          );
+        })}
+      </svg>
+      <div className="mt-1 grid text-center" style={{ gridTemplateColumns: `repeat(${computed.length}, minmax(0, 1fr))` }}>
+        {computed.map((item, idx) => (
+          <button
+            key={item.id}
+            type="button"
+            onMouseEnter={() => setHovered(idx)}
+            onFocus={() => setHovered(idx)}
+            onClick={() => setSelected(selected === idx ? null : idx)}
+            className={`truncate rounded-md px-1 py-1 text-[10px] cursor-pointer ${active === idx ? 'bg-[#F1EDFF] text-[#5625B8] font-semibold' : 'text-[#667085]'}`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export interface PathwayYearPoint {
+  year: number;
+  actual?: number;
+  forecast: number;
+  required: number;
+  upperBand?: number;
+  lowerBand?: number;
+}
+
+export function NetZeroForecastChart({
+  points,
+  thresholdTonnes,
+  targetYear,
+  compact = false
+}: {
+  points: PathwayYearPoint[];
+  thresholdTonnes: number;
+  targetYear: number;
+  compact?: boolean;
+}) {
+  const reduceMotion = useReducedMotion();
+  const [hovered, setHovered] = useState<number | null>(null);
+  const gradId = `nz-${useId().replace(/:/g, '')}`;
+  const width = 1000;
+  const height = compact ? 235 : 285;
+  const padLeft = 56;
+  const padRight = 24;
+  const padTop = 22;
+  const padBottom = 34;
+  const plotW = width - padLeft - padRight;
+  const plotH = height - padTop - padBottom;
+
+  const maxY = Math.max(...points.flatMap((p) => [p.actual ?? 0, p.forecast, p.required, p.upperBand ?? 0]), 1) * 1.08;
+  const xFor = (idx: number) => padLeft + (idx / Math.max(points.length - 1, 1)) * plotW;
+  const yFor = (val: number) => padTop + plotH - (val / maxY) * plotH;
+
+  const actualPts = points.map((p, idx) => (p.actual !== undefined ? { x: xFor(idx), y: yFor(p.actual) } : null)).filter(Boolean) as { x: number; y: number }[];
+  const actualPath = actualPts.length ? `M ${actualPts.map((pt) => `${pt.x} ${pt.y}`).join(' L ')}` : '';
+  const actualArea = actualPts.length
+    ? `${actualPath} L ${actualPts[actualPts.length - 1].x} ${padTop + plotH} L ${actualPts[0].x} ${padTop + plotH} Z`
+    : '';
+
+  const forecastPts = points.map((p, idx) => ({ x: xFor(idx), y: yFor(p.forecast) }));
+  const forecastPath = `M ${forecastPts.map((pt) => `${pt.x} ${pt.y}`).join(' L ')}`;
+
+  const requiredPts = points.map((p, idx) => ({ x: xFor(idx), y: yFor(p.required) }));
+  const requiredPath = `M ${requiredPts.map((pt) => `${pt.x} ${pt.y}`).join(' L ')}`;
+
+  const bandPtsUpper = points.map((p, idx) => ({ x: xFor(idx), y: yFor(p.upperBand ?? p.forecast) }));
+  const bandPtsLower = points.map((p, idx) => ({ x: xFor(idx), y: yFor(p.lowerBand ?? p.forecast) })).reverse();
+  const bandPath = points.some((p) => p.upperBand !== undefined)
+    ? `M ${bandPtsUpper.map((pt) => `${pt.x} ${pt.y}`).join(' L ')} L ${bandPtsLower.map((pt) => `${pt.x} ${pt.y}`).join(' L ')} Z`
+    : '';
+
+  // Visual gap fill between Forecast and Required pathway from future points
+  const futureIndices = points.map((p, idx) => (p.actual === undefined ? idx : -1)).filter((idx) => idx >= 0);
+  const gapStartIdx = futureIndices.length ? Math.max(0, futureIndices[0] - 1) : -1;
+  const gapSlice = gapStartIdx >= 0 ? points.slice(gapStartIdx) : [];
+  const gapAreaPath =
+    gapSlice.length > 1
+      ? `M ${gapSlice.map((p, i) => `${xFor(gapStartIdx + i)} ${yFor(p.forecast)}`).join(' L ')} L ${gapSlice
+          .slice()
+          .reverse()
+          .map((p, i) => `${xFor(gapStartIdx + gapSlice.length - 1 - i)} ${yFor(p.required)}`)
+          .join(' L ')} Z`
+      : '';
+  const lastPoint = points[points.length - 1];
+  const hasPositiveGap = lastPoint ? lastPoint.forecast > lastPoint.required : false;
+
+  const activePoint = hovered !== null ? points[hovered] : null;
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((r) => Math.round(maxY * (1 - r)));
+  const thresholdY = yFor(thresholdTonnes);
+
+  return (
+    <div className="relative" onMouseLeave={() => setHovered(null)}>
+      {hovered !== null && activePoint && (
+        <div
+          role="tooltip"
+          className="pointer-events-none absolute top-1 z-20 min-w-[205px] -translate-x-1/2 rounded-xl border border-[#D8D2DF] bg-white/95 px-3 py-2 text-[11px] shadow-[0_8px_24px_rgba(21,19,26,0.12)] backdrop-blur-md"
+          style={{ left: `${Math.max(16, Math.min(84, (xFor(hovered) / width) * 100))}%` }}
+        >
+          <div className="flex items-center justify-between font-semibold text-[#15131A] mb-1">
+            <span className="font-data">{activePoint.year}</span>
+            <span className="text-[10px] font-medium text-[#667085]">
+              {activePoint.actual !== undefined ? 'Measured' : 'Projected'}
+            </span>
+          </div>
+          {activePoint.actual !== undefined && (
+            <div className="flex justify-between text-[#5625B8]">
+              <span>Measured</span>
+              <span className="font-data font-semibold">{activePoint.actual.toLocaleString()} t</span>
+            </div>
+          )}
+          <div className="flex justify-between text-[#D95917]">
+            <span>Current Pace</span>
+            <span className="font-data font-semibold">{activePoint.forecast.toLocaleString()} t</span>
+          </div>
+          <div className="flex justify-between text-[#238C78]">
+            <span>Goal Path ({targetYear})</span>
+            <span className="font-data font-semibold">{activePoint.required.toLocaleString()} t</span>
+          </div>
+          <div className="mt-1 pt-1 border-t border-[#EEEAF5] flex justify-between text-[#15131A]">
+            <span className="text-[#667085]">Emissions Gap</span>
+            <span className={`font-data font-semibold ${activePoint.forecast - activePoint.required > 0 ? 'text-[#B91C1C]' : 'text-[#15803D]'}`}>
+              {activePoint.forecast - activePoint.required > 0 ? '+' : ''}
+              {(activePoint.forecast - activePoint.required).toLocaleString()} t
+            </span>
+          </div>
+        </div>
+      )}
+
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible" role="group" aria-label="Net-zero trajectory and forecast pathway">
+        <defs>
+          <linearGradient id={`${gradId}-area`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#5625B8" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#5625B8" stopOpacity="0.01" />
+          </linearGradient>
+          <linearGradient id={`${gradId}-gap`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={hasPositiveGap ? '#F46A1F' : '#238C78'} stopOpacity="0.22" />
+            <stop offset="100%" stopColor={hasPositiveGap ? '#F46A1F' : '#238C78'} stopOpacity="0.05" />
+          </linearGradient>
+        </defs>
+
+        {yTicks.map((val, i) => {
+          const y = yFor(val);
+          return (
+            <g key={i}>
+              <line x1={padLeft} x2={width - padRight} y1={y} y2={y} stroke="#E7E5ED" strokeDasharray="4 6" />
+              <text x={padLeft - 10} y={y + 4} textAnchor="end" fill="#85808D" fontSize="11" fontFamily="IBM Plex Mono, monospace">
+                {val >= 1000 ? `${Math.round(val / 1000)}k` : val}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* 90% Reduction Threshold Line */}
+        <line x1={padLeft} x2={width - padRight} y1={thresholdY} y2={thresholdY} stroke="#238C78" strokeWidth="1.2" strokeDasharray="3 4" opacity="0.7" />
+        <text x={width - padRight} y={thresholdY - 6} textAnchor="end" fill="#238C78" fontSize="10" fontWeight="600" fontFamily="IBM Plex Mono, monospace">
+          Net-Zero Goal ({(thresholdTonnes / 1000).toFixed(1)}k t)
+        </text>
+
+        {/* Visual Gap Shading between Current Pace & Goal Path */}
+        {gapAreaPath && <path d={gapAreaPath} fill={`url(#${gradId}-gap)`} />}
+
+        {/* Confidence uncertainty band */}
+        {bandPath && <path d={bandPath} fill="#F46A1F" fillOpacity="0.06" />}
+
+        {/* Required pathway */}
+        <motion.path
+          d={requiredPath}
+          fill="none"
+          stroke="#238C78"
+          strokeWidth="2.8"
+          strokeDasharray="6 5"
+          initial={reduceMotion ? false : { pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: reduceMotion ? 0 : 0.7 }}
+        />
+
+        {/* Forecast trajectory */}
+        <motion.path
+          d={forecastPath}
+          fill="none"
+          stroke="#F46A1F"
+          strokeWidth="2.8"
+          strokeDasharray="5 4"
+          initial={reduceMotion ? false : { pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: reduceMotion ? 0 : 0.75 }}
+        />
+
+        {/* Historical actuals */}
+        {actualArea && <path d={actualArea} fill={`url(#${gradId}-area)`} />}
+        {actualPath && (
+          <motion.path
+            d={actualPath}
+            fill="none"
+            stroke="#5625B8"
+            strokeWidth="3.4"
+            strokeLinecap="round"
+            initial={reduceMotion ? false : { pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: reduceMotion ? 0 : 0.6 }}
+          />
+        )}
+
+        {/* Milestone Pins on Target Year */}
+        {points.map((pt, idx) => {
+          if (pt.year !== 2030 && pt.year !== targetYear) return null;
+          const x = xFor(idx);
+          const yReq = yFor(pt.required);
+          return (
+            <g key={`pin-${pt.year}`} className="pointer-events-none">
+              <circle cx={x} cy={yReq} r="5" fill="#238C78" stroke="#FFFFFF" strokeWidth="2" />
+            </g>
+          );
+        })}
+
+        {/* Interactive hover columns & nodes */}
+        {points.map((pt, idx) => {
+          const x = xFor(idx);
+          const isKeyYear = pt.year === 2020 || pt.year === 2025 || pt.year === 2030 || pt.year === 2035 || pt.year === targetYear || idx === points.length - 1;
+          const isHover = hovered === idx;
+          const colW = plotW / Math.max(points.length, 1);
+
+          return (
+            <g
+              key={pt.year}
+              data-chart-point
+              tabIndex={0}
+              role="button"
+              aria-label={`${pt.year}: trajectory ${pt.forecast.toLocaleString()} tCO₂e, required ${pt.required.toLocaleString()} tCO₂e`}
+              onMouseEnter={() => setHovered(idx)}
+              onFocus={() => setHovered(idx)}
+              onBlur={() => setHovered(null)}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowLeft') focusNeighbor(e, -1);
+                if (e.key === 'ArrowRight') focusNeighbor(e, 1);
+              }}
+              className="cursor-pointer outline-none"
+            >
+              {isHover && <line x1={x} x2={x} y1={padTop} y2={padTop + plotH} stroke="#5625B8" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.55" />}
+              {pt.actual !== undefined && (
+                <circle cx={x} cy={yFor(pt.actual)} r={isHover ? 5.5 : 3.5} fill="#5625B8" stroke="#FFFFFF" strokeWidth="1.8" />
+              )}
+              {pt.actual === undefined && isHover && (
+                <>
+                  <circle cx={x} cy={yFor(pt.forecast)} r="5" fill="#F46A1F" stroke="#FFFFFF" strokeWidth="1.8" />
+                  <circle cx={x} cy={yFor(pt.required)} r="4.5" fill="#238C78" stroke="#FFFFFF" strokeWidth="1.8" />
+                </>
+              )}
+              {(isKeyYear || isHover) && (
+                <text
+                  x={x}
+                  y={height - 8}
+                  textAnchor="middle"
+                  fill={isHover ? '#5625B8' : '#667085'}
+                  fontSize="11"
+                  fontWeight={isHover || pt.year === targetYear ? '600' : '400'}
+                  fontFamily="IBM Plex Mono, monospace"
+                >
+                  {pt.year}
+                </text>
+              )}
+              <rect x={x - colW / 2} y={padTop} width={colW} height={plotH + padBottom} fill="transparent" />
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+export function MicroDotMatrix({
+  percent,
+  color = '#5625B8',
+  cols = 10,
+  rows = 4
+}: {
+  percent: number;
+  color?: string;
+  cols?: number;
+  rows?: number;
+}) {
+  const total = cols * rows;
+  const filled = Math.round((Math.max(0, Math.min(100, percent)) / 100) * total);
+  return (
+    <svg viewBox={`0 0 ${cols * 10} ${rows * 10}`} className="w-full h-auto max-w-[112px]" aria-hidden="true">
+      {Array.from({ length: total }, (_, idx) => {
+        const col = idx % cols;
+        const row = Math.floor(idx / cols);
+        const on = idx < filled;
+        return (
+          <circle
+            key={idx}
+            cx={col * 10 + 5}
+            cy={row * 10 + 5}
+            r={3.2}
+            fill={on ? color : '#E8E4F0'}
+            opacity={on ? 0.92 : 0.7}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+export interface MaccLeverItem {
+  id: string;
+  name: string;
+  scope: string;
+  annualAbatement: number;
+  costPerTonne: number;
+  capexMillion: number;
+}
+
+export function MaccChart({ levers }: { levers: MaccLeverItem[] }) {
+  const reduceMotion = useReducedMotion();
+  const [hovered, setHovered] = useState<number | null>(null);
+  const sorted = [...levers].sort((a, b) => a.costPerTonne - b.costPerTonne);
+  const totalAbatement = sorted.reduce((sum, l) => sum + l.annualAbatement, 0) || 1;
+  const maxAbsCost = Math.max(...sorted.map((l) => Math.abs(l.costPerTonne)), 40) * 1.15;
+
+  const width = 1000;
+  const height = 220;
+  const padLeft = 48;
+  const padRight = 18;
+  const plotW = width - padLeft - padRight;
+  const zeroY = height * 0.56;
+  const scaleY = (cost: number) => (cost / maxAbsCost) * (cost >= 0 ? zeroY - 18 : height - zeroY - 22);
+
+  let cursorX = padLeft;
+  const blocks = sorted.map((l) => {
+    const w = Math.max(24, (l.annualAbatement / totalAbatement) * plotW);
+    const x = cursorX;
+    cursorX += w;
+    return { ...l, x, w: Math.max(12, w - 4) };
+  });
+
+  const active = hovered !== null ? blocks[hovered] : null;
+
+  return (
+    <div className="relative pt-7" onMouseLeave={() => setHovered(null)}>
+      {active && (
+        <ChartTooltip
+          label={active.name}
+          value={`${active.costPerTonne < 0 ? '-' : '+'}$${Math.abs(active.costPerTonne)} / tCO₂e`}
+          comparison={`${active.annualAbatement.toLocaleString()} tCO₂e/yr · ${active.scope} · $${active.capexMillion}M CapEx`}
+        />
+      )}
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible" role="group" aria-label="Marginal abatement cost curve">
+        <line x1={padLeft} x2={width - padRight} y1={zeroY} y2={zeroY} stroke="#AAA6B0" strokeWidth="1.2" />
+        <text x={padLeft - 8} y={zeroY + 4} textAnchor="end" fill="#85808D" fontSize="11" fontFamily="IBM Plex Mono, monospace">$0</text>
+        <text x={padLeft - 8} y={24} textAnchor="end" fill="#85808D" fontSize="10" fontFamily="IBM Plex Mono, monospace">+${Math.round(maxAbsCost)}</text>
+        <text x={padLeft - 8} y={height - 14} textAnchor="end" fill="#238C78" fontSize="10" fontFamily="IBM Plex Mono, monospace">-${Math.round(maxAbsCost)}</text>
+
+        {blocks.map((b, idx) => {
+          const barH = Math.max(8, Math.abs(scaleY(b.costPerTonne)));
+          const y = b.costPerTonne >= 0 ? zeroY - barH : zeroY;
+          const fill = b.costPerTonne < 0 ? '#238C78' : b.scope === 'Scope 1' ? '#5625B8' : b.scope === 'Scope 2' ? '#F46A1F' : '#2563EB';
+          const dim = hovered !== null && hovered !== idx;
+          return (
+            <g
+              key={b.id}
+              data-chart-point
+              tabIndex={0}
+              role="button"
+              aria-label={`${b.name}: $${b.costPerTonne}/t, ${b.annualAbatement.toLocaleString()} tCO₂e/yr`}
+              onMouseEnter={() => setHovered(idx)}
+              onFocus={() => setHovered(idx)}
+              onBlur={() => setHovered(null)}
+              className="cursor-pointer outline-none"
+            >
+              <motion.rect
+                x={b.x}
+                width={b.w}
+                rx={5}
+                fill={fill}
+                initial={reduceMotion ? false : { y: zeroY, height: 0, opacity: 0 }}
+                animate={{ y, height: barH, opacity: dim ? 0.28 : 0.9 }}
+                transition={{ duration: reduceMotion ? 0 : 0.45, delay: reduceMotion ? 0 : idx * 0.04 }}
+              />
+            </g>
+          );
+        })}
+      </svg>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#667085]">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-sm bg-[#238C78]" />Net Savings (&lt; $0/t)</span>
+          <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-sm bg-[#5625B8]" />Scope 1</span>
+          <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-sm bg-[#2563EB]" />Scope 3</span>
+        </div>
+        <span className="font-data font-medium text-[#15131A]">{(totalAbatement / 1000).toFixed(1)}k tCO₂e/yr</span>
+      </div>
+    </div>
+  );
+}
+

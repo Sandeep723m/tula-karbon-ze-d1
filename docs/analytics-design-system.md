@@ -7,13 +7,17 @@ This document describes the reusable chart geometry, data contracts, visual toke
 | File | Responsibility |
 | --- | --- |
 | `src/index.css` | Color, surface, spacing, radius, and motion tokens. |
-| `src/components/charts/AnalyticsCard.tsx` | Shared composable analytics card surface and heading. |
-| `src/components/charts/AnalyticsCharts.tsx` | Reusable SVG chart geometry and chart state components. |
+| `src/utils/analytics.ts` | Shared formatters (`formatCompactTonnes`, `scaleByGross`), scope colors, and delta badge helpers. |
+| `src/data/intelligenceData.ts` | Deterministic org hierarchy, Scope 1/2/3 breakdowns, net-zero compound model, MACC, and quality denominators. |
+| `src/components/charts/AnalyticsCard.tsx` | Shared composable card surface (`title`, optional `badge`, optional `actions` — avoid taglines/subtitles). |
+| `src/components/charts/AnalyticsCharts.tsx` | Reusable SVG chart geometry (`DotMatrixChart`, `StripedBarChart`, `CapsuleDivergingChart`, `WaterfallBridgeChart`, `NetZeroForecastChart`, `MaccChart`, `MicroDotMatrix`, etc.). |
+| `src/components/GlobalFilterBar.tsx` | Hierarchical org filter, scope/granularity/method toggles, and slide-out advanced filter drawer. |
 | `src/components/AnalyticsShowcase.tsx` | Responsive chart catalog connected to the selected dashboard year. |
 | `src/components/TotalEmissionsCard.tsx` | Scope composition and inventory KPIs. |
-| `src/components/MonthlyTimelineCard.tsx` | Monthly diverging and striped emissions views. |
+| `src/components/NetZeroRoadmapCard.tsx` | Interactive 2020–2040 trajectory & compound reduction rate planner. |
+| `src/components/MonthlyTimelineCard.tsx` | Monthly/quarterly diverging, YoY paired, and striped emissions views. |
 | `src/components/EmissionsOffsetCard.tsx` | Segmented project status gauge. |
-| `src/components/TopEmittersCard.tsx` | Facility and source rankings. |
+| `src/components/TopEmittersCard.tsx` | Expandable Business Unit hierarchy, facility, and source rankings. |
 
 ## Color and surface tokens
 
@@ -48,10 +52,10 @@ Import primitives from `src/components/charts/AnalyticsCharts.tsx`:
 | Target/baseline | `TargetBulletChart` | Actual, target or baseline, and axis maximum. |
 | Segmented progress | `SegmentedProgress` | Percent value and meaningful label. |
 
-`AnalyticsCard` composes the shared surface, title, subtitle, and optional actions around any of these primitives:
+`AnalyticsCard` composes the shared surface, title, optional data badge, and optional actions without taglines or helper prose:
 
 ```tsx
-<AnalyticsCard title="Scope emissions" subtitle="Monthly tCO₂e by scope">
+<AnalyticsCard title="Scope emissions" badge={<span className="font-data text-[10px]">tCO₂e</span>}>
   <StripedBarChart labels={months} series={scopeSeries} unit="tCO₂e" />
 </AnalyticsCard>
 ```

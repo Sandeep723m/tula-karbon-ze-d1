@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileText, CheckCircle2, Download, Shield } from 'lucide-react';
+import { X, CheckCircle2, Download, Shield } from 'lucide-react';
 import { YearEmissionsData } from '../types';
 
 interface ReportModalProps {
@@ -95,18 +95,9 @@ Status: Compliant with ${selectedFramework.toUpperCase()} Disclosure Rules
           <X className="w-5 h-5" strokeWidth={1.75} />
         </button>
 
-        <div className="flex items-center gap-2 text-[#5625B8]">
-          <FileText className="w-4 h-4" strokeWidth={1.75} />
-          <span className="text-[12px] font-semibold uppercase tracking-wider">
-            Automated ESG Compliance Reporting
-          </span>
-        </div>
         <h3 className="text-[20px] sm:text-[24px] font-semibold text-[#15131A] tracking-tight mt-1">
-          Export Audited GHG Emissions Report
+          Export ESG Report
         </h3>
-        <p className="text-[13px] text-[#667085] mt-1">
-          Select standard framework for automated statutory &amp; investor disclosures.
-        </p>
 
         {/* Framework Selector */}
         <div className="mt-5 space-y-2.5">

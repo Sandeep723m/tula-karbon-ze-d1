@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { AnimatePresence, motion, useInView, useReducedMotion } from 'framer-motion';
-import { ArrowRight, Layers } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { YearEmissionsData } from '../types';
 
 interface EmissionsOffsetCardProps {
@@ -19,7 +19,6 @@ interface ProjectStatusDatum {
   color: string;
 }
 
-// Existing dashboard fixture; percentages and capsule counts are derived from these status totals.
 const projectStatusData: ProjectStatusDatum[] = [
   { id: 'in-progress', name: 'In Progress', count: 23, tonnage: 21400, color: '#FF7925' },
   { id: 'completed', name: 'Completed', count: 13, tonnage: 11200, color: '#F5C728' },
@@ -69,15 +68,18 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
   const totalTonnage = data.totalOffset;
   const activeId = hoveredCategory ?? selectedCategory;
   const activeCategory = activeId ? projectStatusData.find((status) => status.id === activeId) ?? null : null;
-  const valueForStatus = (status: ProjectStatusDatum) => viewMode === 'count'
-    ? status.count.toLocaleString()
-    : `${(status.tonnage / 1000).toFixed(1)}k`;
+  const valueForStatus = (status: ProjectStatusDatum) =>
+    viewMode === 'count' ? status.count.toLocaleString() : `${(status.tonnage / 1000).toFixed(1)}k`;
   const mainValue = activeCategory
     ? valueForStatus(activeCategory)
-    : viewMode === 'count' ? totalProjects.toLocaleString() : `${(totalTonnage / 1000).toFixed(1)}k`;
+    : viewMode === 'count'
+      ? totalProjects.toLocaleString()
+      : `${(totalTonnage / 1000).toFixed(1)}k`;
   const mainLabel = activeCategory
     ? activeCategory.name
-    : viewMode === 'count' ? 'Active Projects' : 'tCO₂e Retired';
+    : viewMode === 'count'
+      ? 'Active Projects'
+      : 'tCO₂e Retired';
 
   const handleSegmentKeyDown = (event: React.KeyboardEvent<SVGLineElement>, index: number) => {
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
@@ -90,7 +92,7 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       const statusId = segments[index].id;
-      setSelectedCategory((current) => current === statusId ? null : statusId);
+      setSelectedCategory((current) => (current === statusId ? null : statusId));
     }
     if (event.key === 'Escape') {
       setHoveredCategory(null);
@@ -99,31 +101,29 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
   };
 
   const setHovered = (statusId: ProjectStatusId | null) => setHoveredCategory(statusId);
-  const toggleSelected = (statusId: ProjectStatusId) => setSelectedCategory((current) => current === statusId ? null : statusId);
+  const toggleSelected = (statusId: ProjectStatusId) =>
+    setSelectedCategory((current) => (current === statusId ? null : statusId));
 
   return (
     <section
-      className="glass-card-top relative flex h-full flex-col overflow-hidden rounded-[20px] bg-white/80 p-5 sm:p-6"
-      style={{ backdropFilter: 'blur(24px) saturate(1.08)', WebkitBackdropFilter: 'blur(24px) saturate(1.08)' }}
+      className="glass-card-top relative flex h-full flex-col justify-between overflow-hidden p-4 sm:p-5"
       aria-labelledby="project-status-title"
     >
-      <header className="flex items-center gap-3 border-b border-[#E7E5ED] pb-4">
-        <div aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#F2EAFE] text-[#7541DD]">
-          <Layers className="h-6 w-6" strokeWidth={2} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-            <h2 id="project-status-title" className="text-[19px] font-semibold leading-tight tracking-tight text-[#181624]">Project Status</h2>
-            <span className="rounded-full border border-[#B7F0C8] bg-[#E9FBEF] px-2.5 py-1 text-[11px] font-semibold leading-none text-[#15803D]">Approved</span>
-          </div>
-          <p className="mt-1 text-[12px] font-normal text-[#777384]">Carbon offset &amp; removal portfolio</p>
-        </div>
+      {/* Unified Single-Line Header (No Icon Box) */}
+      <header className="flex items-center justify-between gap-2 border-b border-[#E5E0EA] pb-3 min-h-[44px]">
+        <h2 id="project-status-title" className="text-[17px] font-semibold leading-tight tracking-tight text-[#15131A] whitespace-nowrap">
+          Reduction Portfolio
+        </h2>
+        <span className="rounded-full border border-[#B7F0C8] bg-[#E9FBEF] px-2.5 py-0.5 text-[10px] font-semibold leading-none text-[#15803D] shrink-0">
+          Approved
+        </span>
       </header>
 
-      <div className="flex flex-1 flex-col items-center justify-center py-3">
-        <div ref={gaugeRef} className="relative w-full max-w-[400px]">
+      {/* Gauge Body */}
+      <div className="flex flex-col items-center justify-center pt-2 pb-1">
+        <div ref={gaugeRef} className="relative w-full max-w-[320px]">
           <svg
-            viewBox="0 0 400 220"
+            viewBox="0 0 400 212"
             className="block h-auto w-full overflow-visible"
             role="group"
             aria-label={`Project status gauge with ${segments.length} capsules representing ${totalProjects} projects`}
@@ -137,67 +137,69 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
               const faded = activeId !== null && activeId !== segment.id;
               const opacity = faded ? 0.18 : 1;
               const preciseShare = totalProjects ? (segment.count / totalProjects) * 100 : 0;
-              const statusSegmentCount = allocatedCounts[projectStatusData.findIndex((status) => status.id === segment.id)];
-              const segmentDescription = totalProjects > MAX_SEGMENTS
-                ? `${segment.name}, proportional capsule ${segment.projectIndex} of ${statusSegmentCount}, representing ${segment.count} projects, ${preciseShare.toFixed(2)} percent`
-                : `${segment.name}, project ${segment.projectIndex} of ${segment.count}, ${preciseShare.toFixed(2)} percent`;
               return (
                 <g key={`${segment.id}-${segment.projectIndex}`}>
-                <title>{segment.name}: {segment.count} of {totalProjects} projects ({preciseShare.toFixed(2)}%)</title>
-                <motion.line
-                  data-project-segment
-                  x1={x1}
-                  y1={y1}
-                  x2={x2}
-                  y2={y2}
-                  stroke={segment.color}
-                  strokeWidth={SEGMENT_STROKE}
-                  strokeLinecap="round"
-                  role="button"
-                  tabIndex={index === focusIndex ? 0 : -1}
-                  aria-pressed={selectedCategory === segment.id}
-                  aria-label={segmentDescription}
-                  initial={reduceMotion ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: inView ? 1 : 0, opacity: inView ? opacity : 0 }}
-                  transition={{
-                    pathLength: { duration: reduceMotion ? 0 : 0.4, delay: reduceMotion ? 0 : index * 0.015, ease: [0.22, 1, 0.36, 1] },
-                    opacity: { duration: reduceMotion ? 0 : 0.18 }
-                  }}
-                  onMouseEnter={() => setHovered(segment.id)}
-                  onMouseLeave={() => setHovered(null)}
-                  onFocus={() => { setFocusIndex(index); setHovered(segment.id); }}
-                  onBlur={() => setHovered(null)}
-                  onClick={() => toggleSelected(segment.id)}
-                  onKeyDown={(event) => handleSegmentKeyDown(event, index)}
-                  className="cursor-pointer outline-none focus-visible:drop-shadow-[0_0_3px_rgba(117,65,221,.9)]"
-                />
+                  <title>
+                    {segment.name}: {segment.count} of {totalProjects} ({preciseShare.toFixed(1)}%)
+                  </title>
+                  <motion.line
+                    data-project-segment
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke={segment.color}
+                    strokeWidth={SEGMENT_STROKE}
+                    strokeLinecap="round"
+                    role="button"
+                    tabIndex={index === focusIndex ? 0 : -1}
+                    aria-pressed={selectedCategory === segment.id}
+                    aria-label={`${segment.name}: ${segment.count} projects`}
+                    initial={reduceMotion ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: inView ? 1 : 0, opacity: inView ? opacity : 0 }}
+                    transition={{
+                      pathLength: { duration: reduceMotion ? 0 : 0.4, delay: reduceMotion ? 0 : index * 0.015, ease: [0.22, 1, 0.36, 1] },
+                      opacity: { duration: reduceMotion ? 0 : 0.18 }
+                    }}
+                    onMouseEnter={() => setHovered(segment.id)}
+                    onMouseLeave={() => setHovered(null)}
+                    onFocus={() => {
+                      setFocusIndex(index);
+                      setHovered(segment.id);
+                    }}
+                    onBlur={() => setHovered(null)}
+                    onClick={() => toggleSelected(segment.id)}
+                    onKeyDown={(event) => handleSegmentKeyDown(event, index)}
+                    className="cursor-pointer outline-none"
+                  />
                 </g>
               );
             })}
 
             {projectStatusData.map((status, index) => {
-              const bubbleWidth = index < 2 ? 72 : 48;
-              const bubbleHeight = 31;
+              const bubbleWidth = index < 2 ? 64 : 44;
+              const bubbleHeight = 28;
               const precedingSegments = allocatedCounts.slice(0, index).reduce((sum, count) => sum + count, 0);
               const statusSegments = allocatedCounts[index] ?? 0;
-              const middleAngle = Math.PI + Math.PI * (precedingSegments + statusSegments / 2) / Math.max(segmentCount, 1);
-              const labelRadius = OUTER_RADIUS + 31;
+              const middleAngle = Math.PI + (Math.PI * (precedingSegments + statusSegments / 2)) / Math.max(segmentCount, 1);
+              const labelRadius = OUTER_RADIUS + 28;
               const centerX = CENTER_X + labelRadius * Math.cos(middleAngle);
               const centerY = CENTER_Y + labelRadius * Math.sin(middleAngle);
               const x = Math.max(bubbleWidth / 2 + 4, Math.min(400 - bubbleWidth / 2 - 4, centerX));
-              const y = Math.max(bubbleHeight / 2 + 8, Math.min(220 - bubbleHeight / 2 - 8, centerY));
+              const y = Math.max(bubbleHeight / 2 + 6, Math.min(212 - bubbleHeight / 2 - 6, centerY));
               const share = totalProjects ? (status.count / totalProjects) * 100 : 0;
               return (
-                <g key={`callout-${status.id}`} aria-label={`${status.name}: ${share.toFixed(2)} percent`}>
+                <g key={`callout-${status.id}`}>
                   <rect x={x - bubbleWidth / 2} y={y - bubbleHeight / 2} width={bubbleWidth} height={bubbleHeight} rx={bubbleHeight / 2} fill={`${status.color}18`} stroke={`${status.color}55`} strokeWidth="1" />
-                  <text x={x} y={y + 5.5} textAnchor="middle" fill={status.id === 'completed' ? '#8E5A00' : status.color} fontFamily="IBM Plex Sans, sans-serif" fontSize="16" fontWeight="600">{Math.round(share)}%</text>
+                  <text x={x} y={y + 5} textAnchor="middle" fill={status.id === 'completed' ? '#8E5A00' : status.color} fontFamily="IBM Plex Mono, monospace" fontSize="14" fontWeight="600">
+                    {Math.round(share)}%
+                  </text>
                 </g>
               );
             })}
           </svg>
 
-          <div className="pointer-events-none absolute inset-x-0 top-[44%] flex flex-col items-center text-center">
-            <Layers aria-hidden="true" className="mb-1 h-[18px] w-[18px] text-[#7541DD]" strokeWidth={2} />
+          <div className="pointer-events-none absolute inset-x-0 top-[47%] flex flex-col items-center text-center">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={`${activeCategory?.id ?? 'total'}-${mainValue}-${viewMode}`}
@@ -208,8 +210,10 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
                 className="flex flex-col items-center"
                 aria-live="polite"
               >
-                <span className="font-data text-[42px] font-semibold leading-none tracking-[-0.04em] text-[#181624] sm:text-[48px]">{mainValue}</span>
-                <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[#777384]">{mainLabel}</span>
+                <span className="font-data text-[38px] font-semibold leading-none tracking-[-0.04em] text-[#181624]">
+                  {mainValue}
+                </span>
+                <span className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-[#777384]">{mainLabel}</span>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -217,17 +221,28 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
 
         <button
           type="button"
-          onClick={() => setViewMode((mode) => mode === 'count' ? 'tonnage' : 'count')}
-          aria-label={viewMode === 'count' ? 'View offset tonnage' : 'View project counts'}
-          className="mt-1 inline-flex max-w-full items-center justify-center gap-2 rounded-full border border-[#E0D2FF] bg-[#F6F0FF]/90 px-4 py-2 text-[12px] font-semibold text-[#7541DD] transition-colors hover:bg-[#EFE5FF] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7541DD]"
+          onClick={() => setViewMode((mode) => (mode === 'count' ? 'tonnage' : 'count'))}
+          className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-[#E0D2FF] bg-[#F6F0FF]/90 px-3.5 py-1.5 text-[11px] font-semibold text-[#5625B8] transition-colors hover:bg-[#EFE5FF] cursor-pointer"
         >
-          <span className="truncate">{viewMode === 'count' ? `Showing ${totalProjects} Projects · View Tonnage` : `Showing ${(totalTonnage / 1000).toFixed(1)}k tCO₂e · View Projects`}</span>
-          <ArrowRight className="h-4 w-4 shrink-0" />
+          <span className="font-data">{viewMode === 'count' ? `${totalProjects} Projects · Tonnage` : `${(totalTonnage / 1000).toFixed(1)}k tCO₂e · Projects`}</span>
+          <ArrowRight className="h-3.5 w-3.5 shrink-0" />
         </button>
       </div>
 
-      <div className="border-t border-[#E7E5ED] pt-3.5">
-        <div className="grid grid-cols-2 gap-2.5 text-[12px]">
+      {/* Clean Non-Truncating Status Grid */}
+      <div className="space-y-2 pt-2">
+        <div className="grid grid-cols-2 gap-2 text-[11px]">
+          <div className="rounded-xl bg-[#F7F5F2] border border-[#E7E5ED] px-2.5 py-1.5 flex items-center justify-between">
+            <span className="text-[#667085]">Est. annual</span>
+            <span className="font-data font-semibold text-[#15131A]">8,400 t</span>
+          </div>
+          <div className="rounded-xl bg-[#ECFDF3]/70 border border-[#BBF7D0] px-2.5 py-1.5 flex items-center justify-between">
+            <span className="text-[#15803D]">Verified</span>
+            <span className="font-data font-semibold text-[#15803D]">3,200 t</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-[11px]">
           {projectStatusData.map((status) => {
             const isActive = activeId === status.id;
             const isSelected = selectedCategory === status.id;
@@ -237,21 +252,27 @@ export const EmissionsOffsetCard: React.FC<EmissionsOffsetCardProps> = ({ data }
                 key={status.id}
                 type="button"
                 aria-pressed={isSelected}
-                title={`${status.name}: ${status.count} projects (${share.toFixed(2)}%)`}
                 onMouseEnter={() => setHovered(status.id)}
                 onMouseLeave={() => setHovered(null)}
                 onFocus={() => setHovered(status.id)}
                 onBlur={() => setHovered(null)}
                 onClick={() => toggleSelected(status.id)}
-                className="flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7541DD]"
+                className="flex flex-col rounded-xl border px-2.5 py-2 text-left transition-colors duration-150 cursor-pointer"
                 style={{
-                  backgroundColor: isActive ? `${status.color}12` : 'rgba(255,255,255,.48)',
-                  borderColor: isActive ? `${status.color}55` : '#E7E5ED'
+                  backgroundColor: isActive ? `${status.color}14` : 'rgba(255,255,255,.6)',
+                  borderColor: isActive ? `${status.color}66` : '#E7E5ED'
                 }}
               >
-                <i aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: status.color }} />
-                <span className="min-w-0 flex-1 truncate font-medium text-[#181624]">{status.name} ({viewMode === 'count' ? status.count : `${(status.tonnage / 1000).toFixed(1)}k`})</span>
-                <span className="shrink-0 font-data font-semibold text-[#777384]">{Math.round(share)}%</span>
+                <div className="flex items-center gap-1.5">
+                  <i aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: status.color }} />
+                  <span className="font-medium text-[#181624] truncate">{status.name}</span>
+                </div>
+                <div className="mt-1 flex items-baseline justify-between pl-4 font-data">
+                  <span className="font-semibold text-[#15131A]">
+                    {viewMode === 'count' ? status.count : `${(status.tonnage / 1000).toFixed(1)}k`}
+                  </span>
+                  <span className="text-[10px] text-[#667085]">{Math.round(share)}%</span>
+                </div>
               </button>
             );
           })}

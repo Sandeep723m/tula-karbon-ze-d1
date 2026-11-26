@@ -25,7 +25,7 @@ interface AnalyticsShowcaseProps {
 
 type PreviewState = 'ready' | 'loading' | 'empty' | 'error';
 
-function ShowcaseCard({ title, subtitle, children, className = '' }: { title: string; subtitle: string; children: React.ReactNode; className?: string }) {
+function ShowcaseCard({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) {
   const reduceMotion = useReducedMotion();
   return <motion.div
     className="min-w-0"
@@ -34,7 +34,7 @@ function ShowcaseCard({ title, subtitle, children, className = '' }: { title: st
     viewport={{ once: true, amount: 0.12 }}
     transition={{ duration: reduceMotion ? 0 : 0.36, ease: [0.2, 0.8, 0.2, 1] }}
   >
-    <AnalyticsCard title={title} subtitle={subtitle} className={className}>{children}</AnalyticsCard>
+    <AnalyticsCard title={title} className={className}>{children}</AnalyticsCard>
   </motion.div>;
 }
 
@@ -96,66 +96,60 @@ export function AnalyticsShowcase({ data }: AnalyticsShowcaseProps) {
     animate="show"
     variants={{ hidden: {}, show: { transition: { staggerChildren: reduceMotion ? 0 : 0.045 } } }}
   >
-    <header className="flex flex-col justify-between gap-4 pt-1 md:flex-row md:items-end">
-      <div>
-        <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#D9CFFA] bg-[#F1EDFF]/75 px-2.5 py-1 text-[10px] font-medium text-[#6248D5]">Analytics design system <span className="h-1 w-1 rounded-full bg-[#AC96F2]"/> Component showcase</div>
-        <h1 className="text-[24px] font-semibold tracking-tight text-[#18181B] sm:text-[28px]">Carbon intelligence</h1>
-        <p className="mt-1 max-w-2xl text-[13px] text-[#62636D]">Reusable chart geometry for emissions, operations, and reporting readiness.</p>
+    <header className="flex flex-col justify-between gap-4 pt-1 md:flex-row md:items-center">
+      <div className="flex items-center gap-3 flex-wrap">
+        <h1 className="text-[22px] font-semibold tracking-tight text-[#18181B] sm:text-[26px]">Chart Primitives</h1>
+        <span className="inline-flex items-center gap-2 rounded-full border border-[#D9CFFA] bg-[#F1EDFF]/75 px-2.5 py-1 text-[10px] font-medium text-[#6248D5]">Design System</span>
       </div>
-      <div className="text-[11px] text-[#878891]">Dashboard data · FY {data.year}</div>
+      <div className="font-data text-[11px] text-[#667085]">FY {data.year}</div>
     </header>
 
-    <div className="rounded-xl border border-[#D9CFFA]/80 bg-white/45 px-4 py-3 text-[11px] leading-relaxed text-[#62636D] backdrop-blur-sm">
-      Values below are drawn from the current dashboard record for {data.year}. Charts retain their source, unit, and reporting period in focus and hover states.
-    </div>
-
     <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-2">
-      <ShowcaseCard title="01 · Dot matrix" subtitle="Monthly emissions by period. Each column scales to the period maximum; focus or select a month to inspect its exact value.">
+      <ShowcaseCard title="01 · Dot matrix">
         <DotMatrixChart data={monthlyPoints} rows={8} color={data.scopes.scope1.color} unit="tCO₂e" />
       </ShowcaseCard>
 
-      <ShowcaseCard title="02 · Striped bars" subtitle="Grouped monthly emissions preserve the three scope colors and use fine stripes to distinguish series.">
+      <ShowcaseCard title="02 · Striped bars">
         <StripedBarChart labels={data.monthly.map((month) => month.month)} series={monthlySeries} unit="tCO₂e" height={190} />
       </ShowcaseCard>
 
-      <ShowcaseCard title="03 · Segmented radial gauge" subtitle="Offset coverage against gross emissions. Segment count tracks the measured percentage.">
+      <ShowcaseCard title="03 · Segmented radial gauge">
         <SegmentedRadialGauge value={offsetCoverage} max={100} segments={40} color="#238C78" label="Gross emissions offset" unit="%" />
         <p className="mt-1 text-center font-data text-[10px] text-[#878891]">{data.totalOffset.toLocaleString()} / {data.totalEmissions.toLocaleString()} tCO₂e</p>
       </ShowcaseCard>
 
-      <ShowcaseCard title="04 · Hatched columns" subtitle="Top facilities by reported emissions. Patterned columns keep values distinct in dense views and print output.">
+      <ShowcaseCard title="04 · Hatched columns">
         <HatchedColumns data={data.topFacilities.map((facility, index) => ({ label: `0${index + 1}`, value: facility.emissions, unit: 'tCO₂e', source: facility.location, comparison: `${facility.trend > 0 ? '+' : ''}${facility.trend}% year over year` }))} color="#4268D4" unit="tCO₂e" height={190} />
       </ShowcaseCard>
 
-      <ShowcaseCard title="05 · Connected stacked areas" subtitle="Quarterly totals are aggregated from the current monthly ledger, preserving Scope 1, 2, and 3 as layers.">
+      <ShowcaseCard title="05 · Connected stacked areas">
         <ConnectedStackedArea labels={quarterly.map((q) => q.label)} series={quarterlySeries} unit="tCO₂e" />
       </ShowcaseCard>
 
-      <ShowcaseCard title="06 · Rounded bubble plot" subtitle="Reported facility emissions versus year-over-year change. Bubble area follows reported emissions; no risk score is inferred.">
+      <ShowcaseCard title="06 · Rounded bubble plot">
         <RoundedBubblePlot data={facilities} xLabel="Emissions (tCO₂e)" yLabel="Change vs prior year (%)" />
-        <div className="mt-2 text-[10px] text-[#878891]">Facility volume is measured data; vertical position is the reported trend.</div>
       </ShowcaseCard>
 
-      <ShowcaseCard title="07 · Segmented donut" subtitle="Scope composition uses the dashboard inventory totals, with the same scope colors used throughout the page.">
+      <ShowcaseCard title="07 · Segmented donut">
         <SegmentedDonut data={scopes.map((scope) => ({ label: scope.scope, value: scope.value, color: scope.color, source: scope.name }))} totalLabel="Gross emissions" unit="tCO₂e" />
       </ShowcaseCard>
 
-      <ShowcaseCard title="08 · Diverging capsules" subtitle="Month-over-month changes use the previous month as baseline. Positive values increase emissions; negative values reduce them.">
+      <ShowcaseCard title="08 · Diverging capsules">
         <CapsuleDivergingChart data={monthlyChanges} unit="tCO₂e" />
       </ShowcaseCard>
 
-      <ShowcaseCard title="09 · Smooth area" subtitle="A smooth trend line shows the same monthly totals while a low-opacity fill keeps the measurement in focus.">
+      <ShowcaseCard title="09 · Smooth area">
         <SmoothAreaChart data={monthlyPoints} color={data.scopes.scope1.color} unit="tCO₂e" />
       </ShowcaseCard>
 
-      <ShowcaseCard title="10 · Target and baseline" subtitle="Current gross emissions compared with the recorded baseline year. The marker identifies the baseline value.">
+      <ShowcaseCard title="10 · Target and baseline">
         <div className="space-y-6 py-5">
           <TargetBulletChart value={data.totalEmissions} target={data.baselineYear} max={Math.max(data.totalEmissions, data.baselineYear) * 1.12} unit="tCO₂e" label={`Gross emissions vs ${data.baselineYear} baseline`} />
           <SegmentedProgress value={data.scopes.scope1.percentage} color={data.scopes.scope1.color} label="Scope 1 share of gross inventory" />
         </div>
       </ShowcaseCard>
 
-      <ShowcaseCard title="11 · Loading, empty, and error states" subtitle="State controls demonstrate clear feedback while preserving the same card geometry.">
+      <ShowcaseCard title="11 · Loading, empty, and error states">
         <div role="group" aria-label="Preview chart state" className="mb-4 flex flex-wrap gap-1 rounded-xl border border-[#E7E8ED] bg-white/55 p-1">
           {(['ready', 'loading', 'empty', 'error'] as PreviewState[]).map((state) => <button key={state} type="button" aria-pressed={previewState === state} onClick={() => setPreviewState(state)} className={`rounded-lg px-3 py-1.5 text-[11px] capitalize transition-colors ${previewState === state ? 'bg-[#6248D5] text-white shadow-sm' : 'text-[#62636D] hover:bg-white'}`}>{state}</button>)}
         </div>
@@ -163,21 +157,5 @@ export function AnalyticsShowcase({ data }: AnalyticsShowcaseProps) {
         <button type="button" disabled className="mt-3 cursor-not-allowed rounded-lg border border-[#E7E8ED] bg-[#F1F2F5] px-3 py-1.5 text-[11px] text-[#878891] opacity-70" aria-disabled="true">Export unavailable in preview</button>
       </ShowcaseCard>
     </div>
-
-    <section className="grid grid-cols-1 gap-5 md:grid-cols-2">
-      <div className="glass-panel-static p-5">
-        <h2 className="text-[13px] font-semibold text-[#18181B]">Geometry and interaction rules</h2>
-        <ul className="mt-3 space-y-2 text-[11px] leading-relaxed text-[#62636D]">
-          <li>• Hover and keyboard focus share one selection state; selected values stay visible until changed or cleared.</li>
-          <li>• Tooltips carry exact values, units, periods, source context, and comparisons when the record provides them.</li>
-          <li>• Reduced-motion preferences disable movement and chart staggering. Entrances play once when a card enters view.</li>
-          <li>• Scope colors remain consistent: violet for Scope 1, amber for Scope 2, blue for Scope 3.</li>
-        </ul>
-      </div>
-      <div className="glass-panel-static p-5">
-        <h2 className="text-[13px] font-semibold text-[#18181B]">Implementation notes</h2>
-        <p className="mt-3 text-[11px] leading-relaxed text-[#62636D]">Charts are React + TypeScript SVG primitives. Geometry and input data are separate; cards own their titles, legends, and loading states. Missing values should remain missing rather than being interpolated. This page is the visual reference for future dashboard modules.</p>
-      </div>
-    </section>
   </motion.div>;
 }

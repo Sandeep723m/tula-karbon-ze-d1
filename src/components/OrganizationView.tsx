@@ -20,21 +20,16 @@ export const OrganizationView: React.FC<OrganizationViewProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-[20px] sm:text-[24px] font-semibold text-[#15131A] tracking-tight leading-tight">
-            Facilities &amp; Enterprise Operational Boundary
-          </h2>
-          <p className="text-[13px] sm:text-[14px] text-[#667085] font-normal mt-1">
-            Real-time IoT sub-metering across 54 global production plants, assembly lines, and cloud data centers.
-          </p>
-        </div>
+        <h2 className="text-[20px] sm:text-[24px] font-semibold text-[#15131A] tracking-tight leading-tight">
+          Facilities &amp; Operational Boundary
+        </h2>
 
         <div className="flex items-center gap-2 text-[12px] shrink-0">
           <span className="px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#D8D2DF] text-[#15131A] font-medium">
-            <span className="font-data font-semibold">54</span> Facilities Active
+            <span className="font-data font-semibold">54</span> Facilities
           </span>
           <span className="px-3 py-1.5 rounded-lg bg-[#ECFDF3] border border-[#BBF7D0] text-[#15803D] font-medium">
-            <span className="font-data font-semibold">98.4%</span> Telemetry Uptime
+            <span className="font-data font-semibold">98.4%</span> Uptime
           </span>
         </div>
       </div>
